@@ -116,13 +116,13 @@ graph TD
 ### Offline-First Synchronization Architecture
 ```mermaid
 graph LR
-    subgraph POS Terminal (Local)
+    subgraph pos_terminal ["POS Terminal (Local)"]
         App[POS Client]
         LocalDB[(SQLite Local DB)]
         SyncAgent[Sync Background Service]
     end
     
-    subgraph Cloud Server (Central)
+    subgraph cloud_server ["Cloud Server (Central)"]
         API[Central API]
         CentralDB[(SQL Server Main DB)]
     end
