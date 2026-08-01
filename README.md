@@ -10,11 +10,15 @@
 - **Table Management:** Visual floor plan with real-time table status (Available, Occupied, Reserved) and reservation management.
 - **Kitchen Display System (KDS):** Digital order routing, ticket timers, and status updates (Pending, Cooking, Ready).
 - **Reporting & Analytics:** Comprehensive dashboards for sales reports, tax reports, inventory consumption, and employee shift performance.
+- **Shift & Cash Management:** Employee clock-in/out for payroll tracking, cash register float management, and end-of-day Z-Reports.
+- **CRM & Loyalty Programs:** Customer profiles tracking order history, preferences, and a points-based loyalty reward system.
+- **Third-Party Integrations:** API gateway for automatic synchronization of orders from delivery platforms (e.g., UberEats, DoorDash).
 
 ### Non-Functional Requirements
 - **Performance:** High responsiveness with fast transaction processing, especially in the POS module during peak hours.
 - **Security:** Data encryption at rest and in transit, strict role-based access control (RBAC), and PCI-DSS compliance for payment gateway integration.
-- **Reliability:** Offline capabilities for the POS module (caching transactions and syncing when the internet connection is restored) and automated daily data backups.
+- **Reliability:** Offline-First Architecture for the POS module utilizing a local database (e.g., SQLite) to cache transactions, automatically syncing with the central SQL Server when the internet connection is restored, plus automated daily data backups.
+- **Hardware Integration:** Support for standard POS hardware including ESC/POS receipt printers, cash drawer kicks, barcode scanners, and EMV payment terminals.
 - **Scalability:** Modular architecture to support scaling to multiple branches or franchise locations in the future.
 - **Technology Stack:** C# .NET Core (Backend/API), WPF or Blazor/React (Frontend), SQL Server (Database), Entity Framework Core (ORM).
 
@@ -27,6 +31,7 @@
 2. **POS Terminal:** The front-of-house application used by cashiers and waiters to quickly take orders and process payments.
 3. **Kitchen Display System (KDS):** A specialized view for kitchen staff to manage food preparation queues efficiently.
 4. **Inventory Module:** Tracks ingredients and stock levels, deducting quantities automatically based on sold menu items.
+5. **Integrations Gateway:** A background service managing communication with third-party delivery services, accounting software (e.g., QuickBooks/Xero), and payment gateways.
 
 ### Standard Workflow: Order to Payment
 1. **Order Entry:** Waiter takes the customer's order via a mobile tablet, or a cashier enters it directly at the stationary POS terminal.
@@ -104,6 +109,8 @@ graph TD
 - **Payments:** `Id`, `OrderId`, `Amount`, `PaymentMethod` (Cash, Card), `TransactionReference`, `PaymentDate`
 - **InventoryItems:** `Id`, `Name`, `UnitOfMeasure`, `CurrentStock`, `ReorderLevel`
 - **Recipes (Mapping):** `Id`, `MenuItemId`, `InventoryItemId`, `QuantityUsed`
+- **Customers (CRM):** `Id`, `FullName`, `PhoneNumber`, `Email`, `LoyaltyPoints`, `CreatedAt`
+- **Shifts:** `Id`, `UserId`, `ClockInTime`, `ClockOutTime`, `StartingCash`, `EndingCash`
 
 ```mermaid
 erDiagram
@@ -116,6 +123,8 @@ erDiagram
     MENU_ITEMS ||--o{ ORDER_ITEMS : "ordered as"
     MENU_ITEMS ||--o{ RECIPES : "uses"
     INVENTORY_ITEMS ||--o{ RECIPES : "part of"
+    CUSTOMERS ||--o{ ORDERS : "places"
+    USERS ||--o{ SHIFTS : "works"
 
     USERS {
         int Id
