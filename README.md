@@ -57,6 +57,22 @@ sequenceDiagram
     POS System->>Inventory/Reporting: Deduct Stock & Update Sales
 ```
 
+### Third-Party Delivery Workflow (e.g., UberEats, DoorDash)
+```mermaid
+sequenceDiagram
+    participant Delivery App
+    participant Integrations Gateway
+    participant POS System
+    participant Kitchen (KDS)
+    
+    Delivery App->>Integrations Gateway: New Order Placed
+    Integrations Gateway->>POS System: Inject Order into Queue
+    POS System->>Kitchen (KDS): Auto-Route Ticket
+    Kitchen (KDS)-->>POS System: Status: Ready
+    POS System-->>Integrations Gateway: Update Order Status
+    Integrations Gateway-->>Delivery App: Notify Driver for Pickup
+```
+
 ---
 
 ## 3. System Architecture and Database Schema
@@ -95,6 +111,27 @@ graph TD
     Services --> EFCore
     API --> Auth
     EFCore --> SQL
+```
+
+### Offline-First Synchronization Architecture
+```mermaid
+graph LR
+    subgraph POS Terminal (Local)
+        App[POS Client]
+        LocalDB[(SQLite Local DB)]
+        SyncAgent[Sync Background Service]
+    end
+    
+    subgraph Cloud Server (Central)
+        API[Central API]
+        CentralDB[(SQL Server Main DB)]
+    end
+    
+    App -->|Read/Write Fast| LocalDB
+    App -->|Online Queries| API
+    LocalDB --- SyncAgent
+    SyncAgent <-->|Internet Restored: Sync| API
+    API --> CentralDB
 ```
 
 ### Core Database Schema
