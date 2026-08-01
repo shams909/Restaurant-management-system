@@ -36,6 +36,22 @@
 5. **Billing & Checkout:** The cashier or waiter generates the final bill, applies any relevant discounts, and processes the payment (Cash, Credit Card, or Mobile Wallet).
 6. **Post-Transaction Processing:** Inventory is automatically deducted based on predefined recipes, and sales data is updated in the reporting dashboard.
 
+```mermaid
+sequenceDiagram
+    participant Waiter/Cashier
+    participant POS System
+    participant Kitchen (KDS)
+    participant Inventory/Reporting
+    
+    Waiter/Cashier->>POS System: Enter Order
+    POS System->>Kitchen (KDS): Route Order Ticket
+    Kitchen (KDS)-->>POS System: Status: Cooking
+    Kitchen (KDS)-->>POS System: Status: Ready
+    POS System-->>Waiter/Cashier: Notify Service Ready
+    Waiter/Cashier->>POS System: Generate Bill & Process Payment
+    POS System->>Inventory/Reporting: Deduct Stock & Update Sales
+```
+
 ---
 
 ## 3. System Architecture and Database Schema
@@ -46,6 +62,35 @@ We will utilize a **Clean Architecture / N-Tier Architecture** pattern to ensure
 - **Application Layer:** Contains business logic, interfaces, and CQRS (Command Query Responsibility Segregation) patterns to handle commands (writes) and queries (reads) efficiently.
 - **Infrastructure / Data Access Layer:** Implementation of repositories using Entity Framework Core to interact with the database.
 - **Database Layer:** Microsoft SQL Server for robust, relational data storage.
+
+```mermaid
+graph TD
+    subgraph Presentation Layer
+        UI["WPF / Blazor Client"]
+    end
+    
+    subgraph Application Layer
+        API["C# .NET Core Web API"]
+        CQRS["CQRS / MediatR"]
+        Services["Business Services"]
+    end
+    
+    subgraph Infrastructure Layer
+        EFCore["Entity Framework Core"]
+        Auth["Identity & JWT Authentication"]
+    end
+    
+    subgraph Database Layer
+        SQL["SQL Server Database"]
+    end
+
+    UI -->|HTTP/REST| API
+    API --> CQRS
+    CQRS --> Services
+    Services --> EFCore
+    API --> Auth
+    EFCore --> SQL
+```
 
 ### Core Database Schema
 
@@ -59,6 +104,43 @@ We will utilize a **Clean Architecture / N-Tier Architecture** pattern to ensure
 - **Payments:** `Id`, `OrderId`, `Amount`, `PaymentMethod` (Cash, Card), `TransactionReference`, `PaymentDate`
 - **InventoryItems:** `Id`, `Name`, `UnitOfMeasure`, `CurrentStock`, `ReorderLevel`
 - **Recipes (Mapping):** `Id`, `MenuItemId`, `InventoryItemId`, `QuantityUsed`
+
+```mermaid
+erDiagram
+    USERS ||--o{ ORDERS : "takes"
+    ROLES ||--o{ USERS : "has"
+    TABLES ||--o{ ORDERS : "placed at"
+    ORDERS ||--|{ ORDER_ITEMS : "contains"
+    ORDERS ||--o| PAYMENTS : "pays"
+    CATEGORIES ||--|{ MENU_ITEMS : "categorizes"
+    MENU_ITEMS ||--o{ ORDER_ITEMS : "ordered as"
+    MENU_ITEMS ||--o{ RECIPES : "uses"
+    INVENTORY_ITEMS ||--o{ RECIPES : "part of"
+
+    USERS {
+        int Id
+        string Username
+        int RoleId
+    }
+    ORDERS {
+        int Id
+        int TableId
+        int UserId
+        decimal TotalAmount
+        string Status
+    }
+    MENU_ITEMS {
+        int Id
+        int CategoryId
+        string Name
+        decimal Price
+    }
+    INVENTORY_ITEMS {
+        int Id
+        string Name
+        int CurrentStock
+    }
+```
 
 ---
 
