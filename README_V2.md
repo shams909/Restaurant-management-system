@@ -15,30 +15,34 @@ The system is designed using the Clean Architecture pattern. Dependencies flow i
 
 ```mermaid
 graph TD
-    subgraph Presentation Layer
+    subgraph PresentationLayer [Presentation Layer]
         UI["Web API (ASP.NET Core)"]
         Blazor["Blazor / React SPA"]
     end
     
-    subgraph Infrastructure Layer
+    subgraph InfrastructureLayer [Infrastructure Layer]
         EFCore["EF Core Repository"]
         Identity["Auth / Identity"]
         External["Third-Party Integrations"]
     end
     
-    subgraph Application Layer
+    subgraph ApplicationLayer [Application Layer]
         CQRS["MediatR (Commands/Queries)"]
         Interfaces["Interfaces / DTOs"]
     end
     
-    subgraph Domain Layer
+    subgraph DomainLayer [Domain Layer]
         Entities["Core Entities (Models)"]
         Exceptions["Domain Exceptions"]
     end
 
-    UI --> Application Layer
-    Infrastructure Layer -.-> Application Layer
-    Application Layer --> Domain Layer
+    UI --> CQRS
+    Blazor --> UI
+    EFCore -.-> Interfaces
+    Identity -.-> Interfaces
+    External -.-> Interfaces
+    CQRS --> Entities
+    Interfaces --> Entities
 ```
 
 ### C# .NET Core Solution Folder Structure
