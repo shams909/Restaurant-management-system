@@ -128,7 +128,7 @@ stateDiagram-v2
 
 ## 5. System Architecture (Clean Architecture)
 
-The system is designed using the **Clean Architecture** pattern in **C# .NET Core**. Dependencies flow inwards toward the Domain layer, ensuring business logic is completely isolated from UI frameworks or database technologies.
+The system is designed using the **Clean Architecture** pattern in **C# .NET Core**. To maximize development speed and adhere to traditional enterprise standards, we utilize the **Service Pattern** inside the Application Layer, supported by the **Repository & Unit of Work (UoW) Patterns** in the Infrastructure layer.
 
 ### 5.1 Architecture Flow
 ```mermaid
@@ -139,14 +139,15 @@ graph TD
     end
     
     subgraph InfrastructureLayer [Infrastructure Layer]
-        EFCore["EF Core Repository"]
+        EFCore["EF Core (ApplicationDbContext)"]
+        UoW["Unit of Work & Repositories"]
         Identity["Auth / Identity"]
-        External["Third-Party Integrations"]
     end
     
     subgraph ApplicationLayer [Application Layer]
-        CQRS["MediatR (Commands/Queries)"]
-        Interfaces["Interfaces / DTOs"]
+        Services["Business Services (OrderService, MenuService)"]
+        Interfaces["Interfaces (IUnitOfWork, IRepository)"]
+        DTO["Data Transfer Objects (DTOs)"]
     end
     
     subgraph DomainLayer [Domain Layer]
@@ -154,13 +155,13 @@ graph TD
         Exceptions["Domain Exceptions"]
     end
 
-    UI --> CQRS
+    UI --> Services
     Blazor --> UI
     EFCore -.-> Interfaces
-    Identity -.-> Interfaces
-    External -.-> Interfaces
-    CQRS --> Entities
-    Interfaces --> Entities
+    UoW -.-> Interfaces
+    Services --> UoW
+    Services --> Entities
+    UoW --> Entities
 ```
 
 ### 5.2 Visual Studio Solution Folder Structure
@@ -174,16 +175,14 @@ RestaurantManagementSystem.sln
 │   └── Exceptions/          # Domain-specific errors
 │
 ├── 2. RMS.Application (Class Library)
-│   ├── Interfaces/          # IApplicationDbContext, ITenantService
+│   ├── Interfaces/          # IUnitOfWork, IGenericRepository, ITenantService
 │   ├── DTOs/                # OrderResponseDto, CreateUserRequestDto
-│   ├── Features/            # CQRS Pattern (Organized by feature)
-│   │   ├── Orders/          # Commands (CreateOrder) & Queries
-│   │   └── Menu/            # Commands (AddMenuItem)
-│   └── Behaviors/           # MediatR validation pipeline behaviors
+│   └── Services/            # Business Logic (OrderService, MenuService)
 │
 ├── 3. RMS.Infrastructure (Class Library)
 │   ├── Persistence/         # ApplicationDbContext, Migrations
 │   │   └── Configurations/  # FluentAPI Entity configurations
+│   ├── Repositories/        # GenericRepository, UnitOfWork implementation
 │   ├── Services/            # TenantResolutionService (Reads TenantId from JWT)
 │   └── Authentication/      # JwtTokenGenerator setup
 │
@@ -264,7 +263,7 @@ protected override void OnModelCreating(ModelBuilder builder)
 | Layer/Component | Technology |
 | :--- | :--- |
 | **Backend Framework** | C# .NET Core (Web API) |
-| **Architecture** | Clean Architecture, CQRS (MediatR) |
+| **Architecture** | Clean Architecture (Service Pattern, Unit of Work, Repository Pattern) |
 | **Database** | Microsoft SQL Server |
 | **ORM** | Entity Framework Core (EF Core) |
 | **Authentication** | ASP.NET Core Identity & JWT |
@@ -292,9 +291,9 @@ gantt
     JWT Auth & Identity Setup       :b1, after a2, 7d
     Tenant Resolution & Query Filters:b2, after b1, 7d
     
-    section Core API Logic (CQRS)
-    Menu & Table Management API     :c1, after b2, 7d
-    POS Order Processing API        :c2, after c1, 7d
+    section Core Services & Repos
+    Repositories & Unit of Work     :c1, after b2, 7d
+    Core Business Services (Orders) :c2, after c1, 7d
     
     section External Integrations
     Inventory & 3rd Party APIs      :d1, after c2, 7d
@@ -313,7 +312,7 @@ gantt
 
 **Week 1: Architecture Foundation**
 - Set up the 4 Clean Architecture projects (Domain, Application, Infrastructure, API).
-- Configure Dependency Injection and MediatR pipelines.
+- Configure Dependency Injection for the standard Service classes.
 
 **Week 2: Database Design**
 - Define all Core Entities with `TenantId`.
@@ -327,17 +326,18 @@ gantt
 - Implement `TenantResolutionService` (reads JWT from API Headers).
 - Apply EF Core Global Query Filters so all database queries automatically isolate tenant data.
 
-**Week 5: Menu & Table Management (API)**
-- Build CQRS Commands/Queries for Categories and Menu Items.
-- Build CQRS Commands/Queries for Table configurations and status.
+**Week 5: Repositories & Unit of Work**
+- Build the `IGenericRepository` and `IUnitOfWork` interfaces in the Application layer.
+- Implement the `GenericRepository` and `UnitOfWork` inside the Infrastructure layer.
 
-**Week 6: The Order Engine (API)**
-- Develop the core POS Order processing logic (Create Order, Link Order Items, Apply Taxes/Discounts, Calculate Subtotals).
+**Week 6: The Order Engine & Business Services**
+- Build `OrderService.cs` and `MenuService.cs` inside the Application layer.
+- Develop the core POS Order processing logic (Create Order, Link Order Items, Apply Taxes/Discounts).
 - Develop KDS endpoints for updating order statuses.
 
 **Week 7: Integrations & Background Services**
-- Build Inventory deduction logic (deducting stock when items are ordered).
-- Set up background worker services for potential third-party delivery APIs (UberEats dummy webhook).
+- Build Inventory deduction logic inside `InventoryService.cs`.
+- Set up background worker services for potential third-party delivery APIs.
 
 **Week 8: Frontend - Foundation**
 - Initialize the Frontend Project (Blazor/React).
@@ -352,7 +352,7 @@ gantt
 - Develop basic Admin reporting dashboards.
 
 **Week 11: Testing & Quality Assurance**
-- Write automated Unit Tests for Domain logic.
+- Write automated Unit Tests for Domain logic and Application Services.
 - Conduct Integration Testing on API endpoints (ensuring Multi-tenant data leakage does not occur).
 
 **Week 12: Deployment & UAT**
