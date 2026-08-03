@@ -6,7 +6,7 @@ This document serves as the comprehensive A-to-Z blueprint and master documentat
 ### Core Enhancements
 - **Clean Architecture:** Strict separation of concerns (Domain, Application, Infrastructure, Presentation) ensuring a highly testable and maintainable codebase.
 - **Multi-Tenant System:** A single instance of the software serves multiple companies/restaurants independently, using `TenantId` (CompanyId) isolation at the database level.
-- **Offline-First POS:** Robust Point of Sale capabilities designed to handle high transaction volumes without interruption.
+- **Enterprise SPA Frontend:** Utilizing **Angular** as the frontend framework. Angular’s robust, opinionated structure, TypeScript foundation, and Dependency Injection perfectly mirror the architectural patterns of C# .NET Core, making it the industry standard pairing for enterprise .NET applications.
 
 ---
 
@@ -96,17 +96,17 @@ mindmap
 ```mermaid
 sequenceDiagram
     participant Waiter/Cashier
-    participant POS System
+    participant Angular SPA (UI)
     participant Kitchen (KDS)
     participant Inventory/Reporting
     
-    Waiter/Cashier->>POS System: Enter Order
-    POS System->>Kitchen (KDS): Route Order Ticket
-    Kitchen (KDS)-->>POS System: Status: Cooking
-    Kitchen (KDS)-->>POS System: Status: Ready
-    POS System-->>Waiter/Cashier: Notify Service Ready
-    Waiter/Cashier->>POS System: Generate Bill & Process Payment
-    POS System->>Inventory/Reporting: Deduct Stock & Update Sales
+    Waiter/Cashier->>Angular SPA (UI): Enter Order
+    Angular SPA (UI)->>Kitchen (KDS): Route Order Ticket
+    Kitchen (KDS)-->>Angular SPA (UI): Status: Cooking
+    Kitchen (KDS)-->>Angular SPA (UI): Status: Ready
+    Angular SPA (UI)-->>Waiter/Cashier: Notify Service Ready
+    Waiter/Cashier->>Angular SPA (UI): Generate Bill & Process Payment
+    Angular SPA (UI)->>Inventory/Reporting: Deduct Stock & Update Sales
 ```
 
 ### 4.2 Order Item Lifecycle (State Diagram)
@@ -128,20 +128,22 @@ stateDiagram-v2
 
 ## 5. System Architecture (Clean Architecture)
 
-The system is designed using the **Clean Architecture** pattern in **C# .NET Core**. To maximize development speed and adhere to traditional enterprise standards, we utilize the **Service Pattern** inside the Application Layer, supported by the **Repository & Unit of Work (UoW) Patterns** in the Infrastructure layer.
+The system is designed using the **Clean Architecture** pattern in **C# .NET Core**. To maximize development speed and adhere to traditional enterprise standards, we utilize the **Service Pattern** inside the Application Layer, supported by the **Repository & Unit of Work (UoW) Patterns** in the Infrastructure layer. 
+
+For the frontend, we use an **Angular SPA** architecture, communicating with the .NET Core API via secured REST endpoints.
 
 ### 5.1 Architecture Flow
 ```mermaid
 graph TD
     subgraph PresentationLayer [Presentation Layer]
-        UI["Web API (ASP.NET Core)"]
-        Blazor["Blazor / React SPA"]
+        UI["Angular SPA (Frontend)"]
+        API["Web API (Controllers)"]
     end
     
     subgraph InfrastructureLayer [Infrastructure Layer]
         EFCore["EF Core (ApplicationDbContext)"]
         UoW["Unit of Work & Repositories"]
-        Identity["Auth / Identity"]
+        Identity["Auth / Identity (JWT)"]
     end
     
     subgraph ApplicationLayer [Application Layer]
@@ -155,8 +157,8 @@ graph TD
         Exceptions["Domain Exceptions"]
     end
 
-    UI --> Services
-    Blazor --> UI
+    UI --> API
+    API --> Services
     EFCore -.-> Interfaces
     UoW -.-> Interfaces
     Services --> UoW
@@ -186,7 +188,7 @@ RestaurantManagementSystem.sln
 │   ├── Services/            # TenantResolutionService (Reads TenantId from JWT)
 │   └── Authentication/      # JwtTokenGenerator setup
 │
-└── 4. RMS.Api (Web API Project - Startup)
+└── 4. RMS.Api (ASP.NET Core Web API - Startup)
     ├── Controllers/         # API Endpoints (e.g. OrdersController)
     ├── Middlewares/         # Global Exception Handling, Tenant Middleware
     └── Program.cs           # Dependency Injection setup
@@ -262,13 +264,13 @@ protected override void OnModelCreating(ModelBuilder builder)
 
 | Layer/Component | Technology |
 | :--- | :--- |
-| **Backend Framework** | C# .NET Core (Web API) |
+| **Frontend UI** | Angular (TypeScript) |
+| **Backend Framework** | C# .NET Core Web API |
 | **Architecture** | Clean Architecture (Service Pattern, Unit of Work, Repository Pattern) |
 | **Database** | Microsoft SQL Server |
 | **ORM** | Entity Framework Core (EF Core) |
 | **Authentication** | ASP.NET Core Identity & JWT |
 | **Multi-Tenancy** | Database-level (TenantId column + EF Core Query Filters) |
-| **Frontend Options** | Blazor WebAssembly / React.js / WPF |
 
 ---
 
@@ -288,7 +290,7 @@ gantt
     Domain Entities & EF Core Setup :a2, after a1, 7d
     
     section Multi-Tenancy & Auth
-    JWT Auth & Identity Setup       :b1, after a2, 7d
+    Identity & JWT Auth Setup       :b1, after a2, 7d
     Tenant Resolution & Query Filters:b2, after b1, 7d
     
     section Core Services & Repos
@@ -298,20 +300,20 @@ gantt
     section External Integrations
     Inventory & 3rd Party APIs      :d1, after c2, 7d
     
-    section Frontend Development
-    Frontend Architecture & Auth    :e1, after d1, 7d
+    section Angular Frontend
+    Angular Setup & HTTP Interceptor:e1, after d1, 7d
     POS Dashboard & Order Entry     :e2, after e1, 7d
     Kitchen Display System (KDS)    :e3, after e2, 7d
     
     section QA & Deployment
-    Unit & Integration Testing      :f1, after e3, 7d
+    Unit & E2E Testing              :f1, after e3, 7d
     UAT & Cloud Deployment          :f2, after f1, 7d
 ```
 
 ### 8.2 Detailed Week-by-Week Breakdown
 
 **Week 1: Architecture Foundation**
-- Set up the 4 Clean Architecture projects (Domain, Application, Infrastructure, API).
+- Set up the 4 Clean Architecture projects (Domain, Application, Infrastructure, Web API).
 - Configure Dependency Injection for the standard Service classes.
 
 **Week 2: Database Design**
@@ -320,10 +322,10 @@ gantt
 
 **Week 3: Identity & Authentication**
 - Implement ASP.NET Core Identity.
-- Build the Login API endpoint to generate JWT Tokens containing the user's `TenantId` and Role.
+- Build the Login API endpoint to generate JWT Tokens (containing the user's `TenantId` and Role).
 
 **Week 4: Multi-Tenancy Implementation**
-- Implement `TenantResolutionService` (reads JWT from API Headers).
+- Implement `TenantResolutionService` (reads JWT from HTTP API Headers).
 - Apply EF Core Global Query Filters so all database queries automatically isolate tenant data.
 
 **Week 5: Repositories & Unit of Work**
@@ -333,29 +335,29 @@ gantt
 **Week 6: The Order Engine & Business Services**
 - Build `OrderService.cs` and `MenuService.cs` inside the Application layer.
 - Develop the core POS Order processing logic (Create Order, Link Order Items, Apply Taxes/Discounts).
-- Develop KDS endpoints for updating order statuses.
 
 **Week 7: Integrations & Background Services**
 - Build Inventory deduction logic inside `InventoryService.cs`.
-- Set up background worker services for potential third-party delivery APIs.
+- Set up Web API endpoints for third-party integrations (e.g., Delivery platforms).
 
-**Week 8: Frontend - Foundation**
-- Initialize the Frontend Project (Blazor/React).
-- Build the Login Screen, JWT storage, and HTTP Client Interceptors for the Tenant header.
+**Week 8: Angular Frontend - Foundation & Admin**
+- Initialize the Angular Workspace and module architecture.
+- Build the Auth Guard, Login Component, and HTTP Interceptor (to attach the JWT to all requests).
+- Develop the Admin Dashboards (User management, Role assignment).
 
-**Week 9: Frontend - POS Dashboard**
-- Develop the Point of Sale UI (Grid of menu items, Active Order Ticket panel).
-- Connect POS UI to the Order Engine API.
+**Week 9: Angular Frontend - POS Dashboard**
+- Develop the Point of Sale UI components.
+- Utilize Angular Services and RxJS Observables to handle cart state management seamlessly.
 
-**Week 10: Frontend - KDS & Admin**
-- Develop the Kanban-style Kitchen Display System for live ticket tracking.
-- Develop basic Admin reporting dashboards.
+**Week 10: Angular Frontend - KDS & Reporting**
+- Develop the Kanban-style Kitchen Display System component.
+- Integrate charting libraries (e.g., ng2-charts) for visual sales analytics.
 
 **Week 11: Testing & Quality Assurance**
 - Write automated Unit Tests for Domain logic and Application Services.
-- Conduct Integration Testing on API endpoints (ensuring Multi-tenant data leakage does not occur).
+- Conduct End-to-End Testing using Jasmine/Karma.
 
 **Week 12: Deployment & UAT**
-- Deploy Backend API and SQL Server to Azure / AWS.
-- Host the Frontend.
+- Deploy the ASP.NET Core Web API and SQL Server to Azure / AWS.
+- Host the compiled Angular SPA on a CDN (e.g., AWS S3 or Azure Storage).
 - Conduct User Acceptance Testing (UAT) and final bug fixes.
