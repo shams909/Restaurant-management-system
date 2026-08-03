@@ -90,7 +90,7 @@ mindmap
 
 ---
 
-## 4. System Workflows
+## 4. System Workflows & State Diagrams
 
 ### 4.1 Standard Workflow: Order to Payment
 ```mermaid
@@ -109,20 +109,19 @@ sequenceDiagram
     POS System->>Inventory/Reporting: Deduct Stock & Update Sales
 ```
 
-### 4.2 Third-Party Delivery Workflow (e.g., UberEats)
+### 4.2 Order Item Lifecycle (State Diagram)
+To ensure the Kitchen Display System (KDS) and POS are perfectly synced, every order item follows a strict state machine.
+
 ```mermaid
-sequenceDiagram
-    participant Delivery App
-    participant Integrations Gateway
-    participant POS System
-    participant Kitchen (KDS)
+stateDiagram-v2
+    [*] --> Pending : Order Placed by POS
+    Pending --> Cooking : Claimed by Kitchen
+    Cooking --> Ready : Preparation Complete
+    Ready --> Served : Delivered to Table
+    Served --> [*] : Order Paid
     
-    Delivery App->>Integrations Gateway: New Order Placed
-    Integrations Gateway->>POS System: Inject Order into Queue
-    POS System->>Kitchen (KDS): Auto-Route Ticket
-    Kitchen (KDS)-->>POS System: Status: Ready
-    POS System-->>Integrations Gateway: Update Order Status
-    Integrations Gateway-->>Delivery App: Notify Driver for Pickup
+    Pending --> Cancelled : Voided by Admin
+    Cooking --> Cancelled : Voided by Admin
 ```
 
 ---
@@ -260,24 +259,7 @@ protected override void OnModelCreating(ModelBuilder builder)
 
 ---
 
-## 7. Conceptual UI Wireframes
-
-1. **POS Dashboard (Front of House):**
-   - **Left Panel:** Grid of category buttons (e.g., Starters, Mains, Desserts, Beverages) with colorful icons.
-   - **Center Panel:** Responsive grid of menu items corresponding to the selected category.
-   - **Right Panel:** The active order ticket displaying selected items, quantities, and prices. Includes a summary section for Subtotal, Tax, Discount, and a prominent "Pay / Checkout" button.
-   
-2. **Kitchen Display System (KDS):**
-   - **Kanban-style Grid:** Displaying active tickets in columns (Pending, In Progress, Ready).
-   - **Ticket Details:** Each ticket prominently shows the Table Number, Waiter Name, Elapsed Time (color-coded red if delayed), and the list of items with special dietary notes.
-
-3. **Admin Dashboard (Back Office):**
-   - **Top Overview:** KPIs like Today's Sales, Active Orders, and Low Stock Alerts.
-   - **Sidebar Navigation:** Expandable menu for Reports, User Management, Menu Engineering, Inventory control, and System Settings.
-
----
-
-## 8. Technology Stack Summary
+## 7. Technology Stack Summary
 
 | Layer/Component | Technology |
 | :--- | :--- |
@@ -291,28 +273,89 @@ protected override void OnModelCreating(ModelBuilder builder)
 
 ---
 
-## 9. Step-by-Step Implementation Roadmap
+## 8. Development Timeline (12-Week Agile Plan)
 
-### **Phase 1: Foundation (The Base Structure)**
-1. Create the 4 projects in Visual Studio (`Domain`, `Application`, `Infrastructure`, `Api`).
-2. Set up Project References correctly adhering to Clean Architecture.
-3. Create the Domain Entities with `TenantId` properties.
+The project will be developed over a 12-week timeframe. Below is the exact week-by-week implementation roadmap.
 
-### **Phase 2: Database & Multi-Tenancy**
-1. Set up `ApplicationDbContext` in Infrastructure.
-2. Implement the `ITenantService` and the EF Core Global Query Filters.
-3. Generate the first Entity Framework Migration and update the SQL Server database.
+### 8.1 Agile Gantt Chart
+```mermaid
+gantt
+    title RMS 12-Week Development Roadmap
+    dateFormat  YYYY-MM-DD
+    axisFormat  W%W
+    
+    section Architecture & DB
+    Clean Architecture Scaffolding  :a1, 2026-08-01, 7d
+    Domain Entities & EF Core Setup :a2, after a1, 7d
+    
+    section Multi-Tenancy & Auth
+    JWT Auth & Identity Setup       :b1, after a2, 7d
+    Tenant Resolution & Query Filters:b2, after b1, 7d
+    
+    section Core API Logic (CQRS)
+    Menu & Table Management API     :c1, after b2, 7d
+    POS Order Processing API        :c2, after c1, 7d
+    
+    section External Integrations
+    Inventory & 3rd Party APIs      :d1, after c2, 7d
+    
+    section Frontend Development
+    Frontend Architecture & Auth    :e1, after d1, 7d
+    POS Dashboard & Order Entry     :e2, after e1, 7d
+    Kitchen Display System (KDS)    :e3, after e2, 7d
+    
+    section QA & Deployment
+    Unit & Integration Testing      :f1, after e3, 7d
+    UAT & Cloud Deployment          :f2, after f1, 7d
+```
 
-### **Phase 3: Authentication & Security**
-1. Implement ASP.NET Core Identity for users.
-2. Build the Login endpoint to generate JWT Tokens (ensuring `TenantId` and `Role` are inside the payload).
-3. Test Multi-Tenancy: Login as Restaurant A, create an item. Login as Restaurant B, verify you cannot see Restaurant A's item.
+### 8.2 Detailed Week-by-Week Breakdown
 
-### **Phase 4: Core Business Logic (CQRS)**
-1. Build the **Menu Module** (Create/Read/Update Menu Items).
-2. Build the **Table Management Module** (Add tables, change status).
-3. Build the **POS Order Module** (Creating an Order, linking Order Items, calculating totals).
+**Week 1: Architecture Foundation**
+- Set up the 4 Clean Architecture projects (Domain, Application, Infrastructure, API).
+- Configure Dependency Injection and MediatR pipelines.
 
-### **Phase 5: Frontend Integration**
-1. Connect the chosen frontend (Blazor, React, or WPF) to the API endpoints.
-2. Build the POS Interface, Kitchen Display System (KDS), and Admin Dashboards.
+**Week 2: Database Design**
+- Define all Core Entities with `TenantId`.
+- Setup Entity Framework Core `ApplicationDbContext` and run initial migrations to SQL Server.
+
+**Week 3: Identity & Authentication**
+- Implement ASP.NET Core Identity.
+- Build the Login API endpoint to generate JWT Tokens containing the user's `TenantId` and Role.
+
+**Week 4: Multi-Tenancy Implementation**
+- Implement `TenantResolutionService` (reads JWT from API Headers).
+- Apply EF Core Global Query Filters so all database queries automatically isolate tenant data.
+
+**Week 5: Menu & Table Management (API)**
+- Build CQRS Commands/Queries for Categories and Menu Items.
+- Build CQRS Commands/Queries for Table configurations and status.
+
+**Week 6: The Order Engine (API)**
+- Develop the core POS Order processing logic (Create Order, Link Order Items, Apply Taxes/Discounts, Calculate Subtotals).
+- Develop KDS endpoints for updating order statuses.
+
+**Week 7: Integrations & Background Services**
+- Build Inventory deduction logic (deducting stock when items are ordered).
+- Set up background worker services for potential third-party delivery APIs (UberEats dummy webhook).
+
+**Week 8: Frontend - Foundation**
+- Initialize the Frontend Project (Blazor/React).
+- Build the Login Screen, JWT storage, and HTTP Client Interceptors for the Tenant header.
+
+**Week 9: Frontend - POS Dashboard**
+- Develop the Point of Sale UI (Grid of menu items, Active Order Ticket panel).
+- Connect POS UI to the Order Engine API.
+
+**Week 10: Frontend - KDS & Admin**
+- Develop the Kanban-style Kitchen Display System for live ticket tracking.
+- Develop basic Admin reporting dashboards.
+
+**Week 11: Testing & Quality Assurance**
+- Write automated Unit Tests for Domain logic.
+- Conduct Integration Testing on API endpoints (ensuring Multi-tenant data leakage does not occur).
+
+**Week 12: Deployment & UAT**
+- Deploy Backend API and SQL Server to Azure / AWS.
+- Host the Frontend.
+- Conduct User Acceptance Testing (UAT) and final bug fixes.
