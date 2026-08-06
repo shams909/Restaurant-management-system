@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="RMS.Api/RMS.Api.csproj" />
+  <Project Path="RMS.Domain/RMS.Domain.csproj" />
+  <Project Path="RMS.Infrastructure/RMS.Infrastructure.csproj" />
+</Solution>
