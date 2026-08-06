@@ -13,9 +13,14 @@ erDiagram
     TENANTS ||--o{ TABLES : "manages"
     TENANTS ||--o{ INVENTORY_ITEMS : "tracks"
     TENANTS ||--o{ ORDERS : "processes"
+    TENANTS ||--o{ CUSTOMERS : "serves"
 
-    %% Users & Auth
+    %% Users, Roles & Shifts
     ROLES ||--o{ USERS : "has"
+    ROLES ||--o{ ROLE_PERMISSIONS : "grants"
+    PERMISSIONS ||--o{ ROLE_PERMISSIONS : "assigned to"
+    USERS ||--o{ SHIFTS : "works"
+    SHIFTS ||--o{ CASH_REGISTERS : "manages"
 
     %% Menu System (Complex POS)
     MENU_CATEGORIES ||--|{ MENU_ITEMS : "categorizes"
@@ -27,9 +32,14 @@ erDiagram
     INVENTORY_ITEMS ||--o{ RECIPES : "used in"
     INVENTORY_ITEMS ||--o{ PURCHASE_ORDERS : "restocked via"
 
+    %% Tables & Reservations
+    TABLES ||--o{ RESERVATIONS : "booked for"
+    CUSTOMERS ||--o{ RESERVATIONS : "makes"
+
     %% Orders & POS Transactions
     USERS ||--o{ ORDERS : "taken by"
     TABLES ||--o{ ORDERS : "placed at"
+    CUSTOMERS ||--o{ ORDERS : "placed by"
     ORDERS ||--|{ ORDER_ITEMS : "contains"
     ORDER_ITEMS ||--o{ ORDER_ITEM_ADDONS : "includes"
     ORDERS ||--o{ PAYMENTS : "paid via"
@@ -39,50 +49,27 @@ erDiagram
         Guid Id PK
         string CompanyName
         string Subdomain
-        string TaxRate
-        string Currency
     }
     USERS {
         Guid Id PK
-        Guid TenantId FK
-        string Username
         Guid RoleId FK
+        string Username
     }
-    MENU_ITEMS {
+    ROLES {
         Guid Id PK
-        Guid TenantId FK
-        Guid CategoryId FK
         string Name
-        decimal BasePrice
-        bool IsAvailable
+    }
+    TABLES {
+        Guid Id PK
+        string TableNumber
+        int Capacity
+        string Status
     }
     ORDERS {
         Guid Id PK
-        Guid TenantId FK
         Guid TableId FK
-        Guid UserId FK
-        decimal SubTotal
-        decimal TaxAmount
-        decimal DiscountAmount
         decimal GrandTotal
-        string Status "Open, Paid, Void"
-        string OrderType "DineIn, Takeaway, Delivery"
-    }
-    ORDER_ITEMS {
-        Guid Id PK
-        Guid OrderId FK
-        Guid MenuItemId FK
-        Guid VariantId FK
-        int Quantity
-        decimal UnitPrice
-        string KdsStatus "Pending, Cooking, Ready"
-    }
-    INVENTORY_ITEMS {
-        Guid Id PK
-        Guid TenantId FK
-        string Name
-        decimal CurrentStock
-        string Unit "Kg, L, Pcs"
+        string Status
     }
 ```
 
@@ -90,7 +77,7 @@ erDiagram
 
 ## 2. Table Schemas & Data Dictionary
 
-### A. Core Multi-Tenancy
+### A. Core Multi-Tenancy & CRM
 **`Tenants`** (The Companies/Restaurants)
 - `Id` (GUID, PK)
 - `CompanyName` (VARCHAR 100)
@@ -99,20 +86,60 @@ erDiagram
 - `DefaultTaxRate` (DECIMAL 5,2) - e.g., *15.00*
 - `CreatedAt` (DATETIME)
 
-### B. Users & Access
+**`Customers`** (Loyalty & CRM)
+- `Id` (GUID, PK)
+- `TenantId` (GUID, FK)
+- `FullName` (VARCHAR 100)
+- `Phone` (VARCHAR 20)
+- `Email` (VARCHAR 100)
+- `LoyaltyPoints` (INT)
+
+### B. Users, Roles & Access Control
+**`Roles`** (e.g., SuperAdmin, Manager, Cashier, Waiter, Kitchen)
+- `Id` (GUID, PK)
+- `TenantId` (GUID, FK, NULLABLE) - *Null means global role*
+- `Name` (VARCHAR 50)
+
+**`Permissions`** (System capabilities)
+- `Id` (GUID, PK)
+- `ActionName` (VARCHAR 100) - e.g., *CanVoidOrder, CanRefundPayment, CanEditMenu*
+
+**`RolePermissions`** (Mapping Roles to Actions)
+- `RoleId` (GUID, PK/FK)
+- `PermissionId` (GUID, PK/FK)
+
 **`Users`** (Staff Members)
 - `Id` (GUID, PK)
 - `TenantId` (GUID, FK)
 - `RoleId` (GUID, FK)
 - `FullName` (VARCHAR 100)
-- `Passcode` (VARCHAR 10) - *For quick POS login*
-- `PasswordHash` (VARCHAR 255) - *For admin dashboard*
+- `Passcode` (VARCHAR 10) - *For quick POS login via pin-pad*
+- `PasswordHash` (VARCHAR 255) - *For web dashboard login*
 
-**`Roles`** (Admin, Manager, Cashier, Waiter, Kitchen)
+### C. Shift & Cash Management (POS End-of-Day)
+**`Shifts`**
 - `Id` (GUID, PK)
-- `Name` (VARCHAR 50)
+- `TenantId` (GUID, FK)
+- `UserId` (GUID, FK)
+- `ClockInTime` (DATETIME)
+- `ClockOutTime` (DATETIME, NULLABLE)
+- `HourlyRate` (DECIMAL 18,2)
 
-### C. Advanced Menu (POS Form Factor)
+**`CashRegisters`** (Tracking the drawer)
+- `Id` (GUID, PK)
+- `TenantId` (GUID, FK)
+- `UserId` (GUID, FK) - *Cashier on duty*
+- `OpeningBalance` (DECIMAL 18,2) - *Float*
+- `ClosingBalance` (DECIMAL 18,2) - *Z-Report total*
+- `OpenedAt` (DATETIME)
+- `ClosedAt` (DATETIME, NULLABLE)
+
+### D. Advanced Menu Engine
+**`MenuCategories`**
+- `Id` (GUID, PK)
+- `TenantId` (GUID, FK)
+- `Name` (VARCHAR 50) - e.g., "Main Course", "Beverages"
+
 **`MenuItems`**
 - `Id` (GUID, PK)
 - `TenantId` (GUID, FK)
@@ -124,7 +151,7 @@ erDiagram
 **`ItemVariants`** (e.g., Small, Medium, Large)
 - `Id` (GUID, PK)
 - `MenuItemId` (GUID, FK)
-- `Name` (VARCHAR 50) - e.g., "Large"
+- `Name` (VARCHAR 50)
 - `PriceAdjustment` (DECIMAL 18,2) - e.g., +$2.00
 
 **`ItemAddons`** (e.g., Extra Cheese, No Onions)
@@ -133,19 +160,35 @@ erDiagram
 - `Name` (VARCHAR 50)
 - `Price` (DECIMAL 18,2)
 
-### D. Orders & Checkout
+### E. Tables & Reservations
+**`Tables`** (Floor Plan)
+- `Id` (GUID, PK)
+- `TenantId` (GUID, FK)
+- `TableNumber` (VARCHAR 10)
+- `Capacity` (INT)
+- `Status` (VARCHAR 20) - *Available, Occupied, Reserved*
+
+**`Reservations`**
+- `Id` (GUID, PK)
+- `TenantId` (GUID, FK)
+- `CustomerId` (GUID, FK)
+- `TableId` (GUID, FK)
+- `ReservationTime` (DATETIME)
+- `PartySize` (INT)
+
+### F. Orders & Checkout
 **`Orders`** (The main ticket)
 - `Id` (GUID, PK)
 - `TenantId` (GUID, FK)
 - `TableId` (GUID, FK, NULLABLE)
-- `UserId` (GUID, FK) - *Who opened the ticket*
+- `UserId` (GUID, FK) - *Waiter who took the order*
+- `CustomerId` (GUID, FK, NULLABLE) - *For loyalty points*
 - `OrderType` (VARCHAR 20) - *DineIn, Takeaway, Delivery*
 - `SubTotal` (DECIMAL 18,2)
 - `TaxAmount` (DECIMAL 18,2)
 - `DiscountAmount` (DECIMAL 18,2)
 - `GrandTotal` (DECIMAL 18,2)
 - `Status` (VARCHAR 20) - *Open, Paid, Cancelled, Refunded*
-- `CreatedAt` (DATETIME)
 
 **`OrderItems`** (Individual items on the ticket)
 - `Id` (GUID, PK)
@@ -154,8 +197,8 @@ erDiagram
 - `VariantId` (GUID, FK, NULLABLE)
 - `Quantity` (INT)
 - `UnitPrice` (DECIMAL 18,2)
-- `KdsStatus` (VARCHAR 20) - *Pending, Cooking, Ready, Served* - **Critical for Kitchen Display System**
-- `Notes` (VARCHAR 255) - e.g., "Allergy to peanuts"
+- `KdsStatus` (VARCHAR 20) - *Pending, Cooking, Ready, Served* - **For Kitchen Display System**
+- `Notes` (VARCHAR 255)
 
 **`OrderItemAddons`** (Extras requested on the specific item)
 - `Id` (GUID, PK)
@@ -167,9 +210,9 @@ erDiagram
 - `OrderId` (GUID, FK)
 - `Amount` (DECIMAL 18,2)
 - `PaymentMethod` (VARCHAR 20) - *Cash, CreditCard, Mobile*
-- `TransactionId` (VARCHAR 100, NULLABLE) - *For card terminals*
+- `CashRegisterId` (GUID, FK) - *Ties payment to a specific shift's drawer*
 
-### E. Inventory & Recipes
+### G. Inventory & Recipes
 **`InventoryItems`** (Raw materials)
 - `Id` (GUID, PK)
 - `TenantId` (GUID, FK)
@@ -183,3 +226,10 @@ erDiagram
 - `MenuItemId` (GUID, FK)
 - `InventoryItemId` (GUID, FK)
 - `QuantityUsed` (DECIMAL 18,3) - e.g., 0.2 (Kg of beef per burger)
+
+**`PurchaseOrders`** (Restocking inventory)
+- `Id` (GUID, PK)
+- `TenantId` (GUID, FK)
+- `SupplierName` (VARCHAR 100)
+- `TotalCost` (DECIMAL 18,2)
+- `Status` (VARCHAR 20) - *Pending, Received*
