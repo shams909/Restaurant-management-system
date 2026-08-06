@@ -47,29 +47,29 @@ erDiagram
     %% Table Structures
     TENANTS {
         Guid Id PK
+        string CompanyCode
         string CompanyName
-        string Subdomain
     }
     USERS {
-        Guid Id PK
-        Guid RoleId FK
-        string Username
+        int Id PK
+        Guid TenantId FK
+        string EmployeeNo
     }
-    ROLES {
-        Guid Id PK
-        string Name
-    }
-    TABLES {
-        Guid Id PK
-        string TableNumber
-        int Capacity
-        string Status
+    CUSTOMERS {
+        int Id PK
+        Guid TenantId FK
+        string CustomerNo
     }
     ORDERS {
-        Guid Id PK
-        Guid TableId FK
+        int Id PK
+        Guid TenantId FK
+        string OrderNo
         decimal GrandTotal
-        string Status
+    }
+    MENU_ITEMS {
+        int Id PK
+        Guid TenantId FK
+        string ItemCode
     }
 ```
 
@@ -78,8 +78,9 @@ erDiagram
 ## 2. Table Schemas & Data Dictionary
 
 ### A. Core Multi-Tenancy & CRM
-**`Tenants`** (The Companies/Restaurants)
+**`Tenants`** (The Companies/Restaurants - **Only table with a GUID Primary Key**)
 - `Id` (GUID, PK)
+- `CompanyCode` (VARCHAR 20, UNIQUE) - e.g., *COMP-001*
 - `CompanyName` (VARCHAR 100)
 - `Subdomain` (VARCHAR 50, UNIQUE) - e.g., *kfc.rms.com*
 - `Currency` (VARCHAR 10) - e.g., *USD, EUR*
@@ -87,149 +88,166 @@ erDiagram
 - `CreatedAt` (DATETIME)
 
 **`Customers`** (Loyalty & CRM)
-- `Id` (GUID, PK)
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
+- `CustomerNo` (VARCHAR 20, UNIQUE) - e.g., *CUST-10045*
 - `FullName` (VARCHAR 100)
 - `Phone` (VARCHAR 20)
 - `Email` (VARCHAR 100)
 - `LoyaltyPoints` (INT)
 
 ### B. Users, Roles & Access Control
-**`Roles`** (e.g., SuperAdmin, Manager, Cashier, Waiter, Kitchen)
-- `Id` (GUID, PK)
-- `TenantId` (GUID, FK, NULLABLE) - *Null means global role*
+**`Roles`**
+- `Id` (INT, PK, IDENTITY)
+- `TenantId` (GUID, FK, NULLABLE)
+- `RoleCode` (VARCHAR 20) - e.g., *ROLE-ADMIN*
 - `Name` (VARCHAR 50)
 
-**`Permissions`** (System capabilities)
-- `Id` (GUID, PK)
-- `ActionName` (VARCHAR 100) - e.g., *CanVoidOrder, CanRefundPayment, CanEditMenu*
+**`Permissions`**
+- `Id` (INT, PK, IDENTITY)
+- `PermissionCode` (VARCHAR 20) - e.g., *PERM-VOID*
+- `ActionName` (VARCHAR 100)
 
-**`RolePermissions`** (Mapping Roles to Actions)
-- `RoleId` (GUID, PK/FK)
-- `PermissionId` (GUID, PK/FK)
+**`RolePermissions`**
+- `RoleId` (INT, PK/FK)
+- `PermissionId` (INT, PK/FK)
 
 **`Users`** (Staff Members)
-- `Id` (GUID, PK)
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
-- `RoleId` (GUID, FK)
+- `RoleId` (INT, FK)
+- `EmployeeNo` (VARCHAR 20, UNIQUE) - e.g., *EMP-102*
 - `FullName` (VARCHAR 100)
 - `Passcode` (VARCHAR 10) - *For quick POS login via pin-pad*
-- `PasswordHash` (VARCHAR 255) - *For web dashboard login*
+- `PasswordHash` (VARCHAR 255)
 
 ### C. Shift & Cash Management (POS End-of-Day)
 **`Shifts`**
-- `Id` (GUID, PK)
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
-- `UserId` (GUID, FK)
+- `UserId` (INT, FK)
+- `ShiftCode` (VARCHAR 20) - e.g., *SHF-20231015-01*
 - `ClockInTime` (DATETIME)
 - `ClockOutTime` (DATETIME, NULLABLE)
 - `HourlyRate` (DECIMAL 18,2)
 
-**`CashRegisters`** (Tracking the drawer)
-- `Id` (GUID, PK)
+**`CashRegisters`**
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
-- `UserId` (GUID, FK) - *Cashier on duty*
-- `OpeningBalance` (DECIMAL 18,2) - *Float*
-- `ClosingBalance` (DECIMAL 18,2) - *Z-Report total*
+- `UserId` (INT, FK)
+- `RegisterCode` (VARCHAR 20) - e.g., *REG-01*
+- `OpeningBalance` (DECIMAL 18,2)
+- `ClosingBalance` (DECIMAL 18,2)
 - `OpenedAt` (DATETIME)
 - `ClosedAt` (DATETIME, NULLABLE)
 
 ### D. Advanced Menu Engine
 **`MenuCategories`**
-- `Id` (GUID, PK)
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
-- `Name` (VARCHAR 50) - e.g., "Main Course", "Beverages"
+- `CategoryCode` (VARCHAR 20) - e.g., *CAT-BEV*
+- `Name` (VARCHAR 50)
 
 **`MenuItems`**
-- `Id` (GUID, PK)
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
-- `CategoryId` (GUID, FK)
+- `CategoryId` (INT, FK)
+- `ItemCode` (VARCHAR 20, UNIQUE) - e.g., *MNU-BRG-01*
 - `Name` (VARCHAR 100)
 - `BasePrice` (DECIMAL 18,2)
 - `IsAvailable` (BIT)
 
-**`ItemVariants`** (e.g., Small, Medium, Large)
-- `Id` (GUID, PK)
-- `MenuItemId` (GUID, FK)
+**`ItemVariants`**
+- `Id` (INT, PK, IDENTITY)
+- `MenuItemId` (INT, FK)
+- `VariantCode` (VARCHAR 20) - e.g., *VAR-LRG*
 - `Name` (VARCHAR 50)
-- `PriceAdjustment` (DECIMAL 18,2) - e.g., +$2.00
+- `PriceAdjustment` (DECIMAL 18,2)
 
-**`ItemAddons`** (e.g., Extra Cheese, No Onions)
-- `Id` (GUID, PK)
-- `MenuItemId` (GUID, FK)
+**`ItemAddons`**
+- `Id` (INT, PK, IDENTITY)
+- `MenuItemId` (INT, FK)
+- `AddonCode` (VARCHAR 20) - e.g., *ADD-CHS*
 - `Name` (VARCHAR 50)
 - `Price` (DECIMAL 18,2)
 
 ### E. Tables & Reservations
 **`Tables`** (Floor Plan)
-- `Id` (GUID, PK)
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
+- `TableCode` (VARCHAR 20) - e.g., *TBL-A1*
 - `TableNumber` (VARCHAR 10)
 - `Capacity` (INT)
 - `Status` (VARCHAR 20) - *Available, Occupied, Reserved*
 
 **`Reservations`**
-- `Id` (GUID, PK)
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
-- `CustomerId` (GUID, FK)
-- `TableId` (GUID, FK)
+- `CustomerId` (INT, FK)
+- `TableId` (INT, FK)
+- `ReservationNo` (VARCHAR 20) - e.g., *RES-00921*
 - `ReservationTime` (DATETIME)
 - `PartySize` (INT)
 
 ### F. Orders & Checkout
 **`Orders`** (The main ticket)
-- `Id` (GUID, PK)
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
-- `TableId` (GUID, FK, NULLABLE)
-- `UserId` (GUID, FK) - *Waiter who took the order*
-- `CustomerId` (GUID, FK, NULLABLE) - *For loyalty points*
+- `TableId` (INT, FK, NULLABLE)
+- `UserId` (INT, FK)
+- `CustomerId` (INT, FK, NULLABLE)
+- `OrderNo` (VARCHAR 50, UNIQUE) - e.g., *ORD-2023-11204*
 - `OrderType` (VARCHAR 20) - *DineIn, Takeaway, Delivery*
 - `SubTotal` (DECIMAL 18,2)
 - `TaxAmount` (DECIMAL 18,2)
 - `DiscountAmount` (DECIMAL 18,2)
 - `GrandTotal` (DECIMAL 18,2)
-- `Status` (VARCHAR 20) - *Open, Paid, Cancelled, Refunded*
+- `Status` (VARCHAR 20)
 
-**`OrderItems`** (Individual items on the ticket)
-- `Id` (GUID, PK)
-- `OrderId` (GUID, FK)
-- `MenuItemId` (GUID, FK)
-- `VariantId` (GUID, FK, NULLABLE)
+**`OrderItems`**
+- `Id` (INT, PK, IDENTITY)
+- `OrderId` (INT, FK)
+- `MenuItemId` (INT, FK)
+- `VariantId` (INT, FK, NULLABLE)
 - `Quantity` (INT)
 - `UnitPrice` (DECIMAL 18,2)
-- `KdsStatus` (VARCHAR 20) - *Pending, Cooking, Ready, Served* - **For Kitchen Display System**
+- `KdsStatus` (VARCHAR 20) - *Pending, Cooking, Ready, Served*
 - `Notes` (VARCHAR 255)
 
-**`OrderItemAddons`** (Extras requested on the specific item)
-- `Id` (GUID, PK)
-- `OrderItemId` (GUID, FK)
-- `AddonId` (GUID, FK)
+**`OrderItemAddons`**
+- `Id` (INT, PK, IDENTITY)
+- `OrderItemId` (INT, FK)
+- `AddonId` (INT, FK)
 
 **`Payments`**
-- `Id` (GUID, PK)
-- `OrderId` (GUID, FK)
+- `Id` (INT, PK, IDENTITY)
+- `OrderId` (INT, FK)
+- `CashRegisterId` (INT, FK)
+- `PaymentNo` (VARCHAR 50) - e.g., *PAY-99382*
 - `Amount` (DECIMAL 18,2)
 - `PaymentMethod` (VARCHAR 20) - *Cash, CreditCard, Mobile*
-- `CashRegisterId` (GUID, FK) - *Ties payment to a specific shift's drawer*
+- `TransactionId` (VARCHAR 100, NULLABLE)
 
 ### G. Inventory & Recipes
-**`InventoryItems`** (Raw materials)
-- `Id` (GUID, PK)
+**`InventoryItems`**
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
-- `Name` (VARCHAR 100) - e.g., "Beef Patty"
+- `ItemCode` (VARCHAR 20, UNIQUE) - e.g., *INV-BEEF-01*
+- `Name` (VARCHAR 100)
 - `CurrentStock` (DECIMAL 18,3)
 - `UnitOfMeasure` (VARCHAR 20) - e.g., "Kg", "Pcs"
-- `ReorderLevel` (DECIMAL 18,3) - *Triggers low stock alert*
+- `ReorderLevel` (DECIMAL 18,3)
 
-**`Recipes`** (How menu items deplete inventory)
-- `Id` (GUID, PK)
-- `MenuItemId` (GUID, FK)
-- `InventoryItemId` (GUID, FK)
-- `QuantityUsed` (DECIMAL 18,3) - e.g., 0.2 (Kg of beef per burger)
+**`Recipes`**
+- `Id` (INT, PK, IDENTITY)
+- `MenuItemId` (INT, FK)
+- `InventoryItemId` (INT, FK)
+- `QuantityUsed` (DECIMAL 18,3)
 
-**`PurchaseOrders`** (Restocking inventory)
-- `Id` (GUID, PK)
+**`PurchaseOrders`**
+- `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
+- `PoNumber` (VARCHAR 50, UNIQUE) - e.g., *PO-2023-089*
 - `SupplierName` (VARCHAR 100)
 - `TotalCost` (DECIMAL 18,2)
 - `Status` (VARCHAR 20) - *Pending, Received*
