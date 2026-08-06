@@ -6,7 +6,7 @@ This document serves as the comprehensive A-to-Z blueprint and master documentat
 ### Core Enhancements
 - **Clean Architecture:** Strict separation of concerns (Domain, Application, Infrastructure, Presentation) ensuring a highly testable and maintainable codebase.
 - **Multi-Tenant System:** A single instance of the software serves multiple companies/restaurants independently, using `TenantId` (CompanyId) isolation at the database level.
-- **Enterprise SPA Frontend:** Utilizing **Angular** as the frontend framework. Angular’s robust, opinionated structure, TypeScript foundation, and Dependency Injection perfectly mirror the architectural patterns of C# .NET Core, making it the industry standard pairing for enterprise .NET applications.
+- **Modern SPA Frontend:** Utilizing **React** as the frontend framework. React's component-driven architecture paired with .NET Core Web APIs has become the modern industry standard for rapidly delivering high-performance, dynamic user interfaces.
 
 ---
 
@@ -96,17 +96,17 @@ mindmap
 ```mermaid
 sequenceDiagram
     participant Waiter/Cashier
-    participant Angular SPA (UI)
+    participant React SPA (UI)
     participant Kitchen (KDS)
     participant Inventory/Reporting
     
-    Waiter/Cashier->>Angular SPA (UI): Enter Order
-    Angular SPA (UI)->>Kitchen (KDS): Route Order Ticket
-    Kitchen (KDS)-->>Angular SPA (UI): Status: Cooking
-    Kitchen (KDS)-->>Angular SPA (UI): Status: Ready
-    Angular SPA (UI)-->>Waiter/Cashier: Notify Service Ready
-    Waiter/Cashier->>Angular SPA (UI): Generate Bill & Process Payment
-    Angular SPA (UI)->>Inventory/Reporting: Deduct Stock & Update Sales
+    Waiter/Cashier->>React SPA (UI): Enter Order
+    React SPA (UI)->>Kitchen (KDS): Route Order Ticket
+    Kitchen (KDS)-->>React SPA (UI): Status: Cooking
+    Kitchen (KDS)-->>React SPA (UI): Status: Ready
+    React SPA (UI)-->>Waiter/Cashier: Notify Service Ready
+    Waiter/Cashier->>React SPA (UI): Generate Bill & Process Payment
+    React SPA (UI)->>Inventory/Reporting: Deduct Stock & Update Sales
 ```
 
 ### 4.2 Order Item Lifecycle (State Diagram)
@@ -130,13 +130,13 @@ stateDiagram-v2
 
 The system is designed using the **Clean Architecture** pattern in **C# .NET Core**. To maximize development speed and adhere to traditional enterprise standards, we utilize the **Service Pattern** inside the Application Layer, supported by the **Repository & Unit of Work (UoW) Patterns** in the Infrastructure layer. 
 
-For the frontend, we use an **Angular SPA** architecture, communicating with the .NET Core API via secured REST endpoints.
+For the frontend, we use a **React SPA** architecture, communicating with the .NET Core API via secured REST endpoints.
 
 ### 5.1 Architecture Flow
 ```mermaid
 graph TD
     subgraph PresentationLayer [Presentation Layer]
-        UI["Angular SPA (Frontend)"]
+        UI["React SPA (Frontend)"]
         API["Web API (Controllers)"]
     end
     
@@ -198,7 +198,7 @@ RestaurantManagementSystem.sln
 
 ## 6. Multi-Tenant Database Design
 
-To support multiple companies from a single database, we use **Database-Level Multi-Tenancy** (Row-Level Security). Every core table includes a `TenantId` (or `CompanyId`) column.
+To support multiple companies from a single database, we use **Database-Level Multi-Tenancy** (Row-Level Security). Every core table includes a `TenantId` column, and we use integer primary keys with human-readable tracking codes.
 
 ### 6.1 Database Entity Relationship (ER) Diagram
 
@@ -219,22 +219,20 @@ erDiagram
     MENU_ITEM ||--o{ ORDER_ITEM : "ordered as"
 
     TENANT {
-        uniqueidentifier Id PK
+        Guid Id PK
+        string CompanyCode
         string CompanyName
-        string Subdomain
     }
     USER {
-        uniqueidentifier Id PK
-        uniqueidentifier TenantId FK
-        string Username
-        int RoleId FK
+        int Id PK
+        Guid TenantId FK
+        string EmployeeNo
     }
     ORDER {
-        uniqueidentifier Id PK
-        uniqueidentifier TenantId FK
-        uniqueidentifier TableId FK
+        int Id PK
+        Guid TenantId FK
+        string OrderNo
         decimal TotalAmount
-        string Status
     }
 ```
 
@@ -242,10 +240,10 @@ erDiagram
 
 | Table Name | Description | Key Columns |
 | :--- | :--- | :--- |
-| **Tenants** | The root table identifying different restaurant businesses. | `Id` (PK), `CompanyName`, `Subdomain`, `CreatedAt` |
-| **Users** | Employees belonging to a specific tenant. | `Id` (PK), `TenantId` (FK), `Username`, `PasswordHash`, `RoleId` |
-| **MenuItems** | Food and beverages sold by a tenant. | `Id` (PK), `TenantId` (FK), `Name`, `Price`, `IsAvailable` |
-| **Orders** | Customer orders placed at the restaurant. | `Id` (PK), `TenantId` (FK), `TableId` (FK), `UserId` (FK), `TotalAmount`, `Status` |
+| **Tenants** | The root table identifying different restaurant businesses. | `Id` (GUID, PK), `CompanyCode`, `CompanyName` |
+| **Users** | Employees belonging to a specific tenant. | `Id` (INT, PK), `TenantId` (FK), `EmployeeNo`, `RoleId` |
+| **MenuItems** | Food and beverages sold by a tenant. | `Id` (INT, PK), `TenantId` (FK), `ItemCode`, `BasePrice` |
+| **Orders** | Customer orders placed at the restaurant. | `Id` (INT, PK), `TenantId` (FK), `OrderNo`, `TableId` (FK) |
 
 ### 6.3 Implementation: EF Core Global Query Filters
 To ensure data isolation so Restaurant A never sees Restaurant B's data, we apply a global filter in the `ApplicationDbContext`. The `TenantId` is extracted from the user's JWT token via the `ITenantService`.
@@ -264,7 +262,7 @@ protected override void OnModelCreating(ModelBuilder builder)
 
 | Layer/Component | Technology |
 | :--- | :--- |
-| **Frontend UI** | Angular (TypeScript) |
+| **Frontend UI** | React |
 | **Backend Framework** | C# .NET Core Web API |
 | **Architecture** | Clean Architecture (Service Pattern, Unit of Work, Repository Pattern) |
 | **Database** | Microsoft SQL Server |
@@ -274,90 +272,67 @@ protected override void OnModelCreating(ModelBuilder builder)
 
 ---
 
-## 8. Development Timeline (12-Week Agile Plan)
+## 8. Fast-Track Development Timeline (8-Week Agile Plan)
 
-The project will be developed over a 12-week timeframe. Below is the exact week-by-week implementation roadmap.
+Since the architecture and database schema have been thoroughly pre-planned and approved, the standard 12-week timeline can be compressed into a highly efficient **8-week execution plan**.
 
 ### 8.1 Agile Gantt Chart
 ```mermaid
 gantt
-    title RMS 12-Week Development Roadmap
+    title RMS 8-Week Accelerated Roadmap
     dateFormat  YYYY-MM-DD
     axisFormat  W%W
     
-    section Architecture & DB
-    Clean Architecture Scaffolding  :a1, 2026-08-01, 7d
-    Domain Entities & EF Core Setup :a2, after a1, 7d
+    section Foundation (Backend)
+    Architecture & Core DB Setup    :a1, 2026-08-01, 7d
+    Multi-Tenancy & Identity Auth   :a2, after a1, 7d
     
-    section Multi-Tenancy & Auth
-    Identity & JWT Auth Setup       :b1, after a2, 7d
-    Tenant Resolution & Query Filters:b2, after b1, 7d
+    section API & Business Logic
+    UoW & Core Business Services    :b1, after a2, 7d
+    Inventory & External Integrations:b2, after b1, 7d
     
-    section Core Services & Repos
-    Repositories & Unit of Work     :c1, after b2, 7d
-    Core Business Services (Orders) :c2, after c1, 7d
+    section React Frontend
+    React Foundation & Admin UI     :c1, after b2, 7d
+    POS Dashboard & Kitchen (KDS)   :c2, after c1, 7d
     
-    section External Integrations
-    Inventory & 3rd Party APIs      :d1, after c2, 7d
-    
-    section Angular Frontend
-    Angular Setup & HTTP Interceptor:e1, after d1, 7d
-    POS Dashboard & Order Entry     :e2, after e1, 7d
-    Kitchen Display System (KDS)    :e3, after e2, 7d
-    
-    section QA & Deployment
-    Unit & E2E Testing              :f1, after e3, 7d
-    UAT & Cloud Deployment          :f2, after f1, 7d
+    section QA & Go-Live
+    Unit & Integration Testing      :d1, after c2, 7d
+    UAT & Cloud Deployment          :d2, after d1, 7d
 ```
 
 ### 8.2 Detailed Week-by-Week Breakdown
 
-**Week 1: Architecture Foundation**
-- Set up the 4 Clean Architecture projects (Domain, Application, Infrastructure, Web API).
-- Configure Dependency Injection for the standard Service classes.
+**Week 1: Architecture & Database Foundation**
+- Scaffold the 4 Clean Architecture projects (Domain, Application, Infrastructure, Web API).
+- Define all C# Entities (using Integers for PKs, GUID for Tenant).
+- Setup `ApplicationDbContext` and run EF Core migrations to SQL Server.
 
-**Week 2: Database Design**
-- Define all Core Entities with `TenantId`.
-- Setup Entity Framework Core `ApplicationDbContext` and run initial migrations to SQL Server.
+**Week 2: Multi-Tenancy & Authentication**
+- Implement ASP.NET Core Identity and generate JWT Tokens.
+- Implement `TenantResolutionService` and apply EF Core Global Query Filters for data isolation.
 
-**Week 3: Identity & Authentication**
-- Implement ASP.NET Core Identity.
-- Build the Login API endpoint to generate JWT Tokens (containing the user's `TenantId` and Role).
+**Week 3: Core Business Services (The Engine)**
+- Implement `IGenericRepository` and `UnitOfWork`.
+- Build the core POS Order processing logic (Create Order, Apply Taxes/Discounts).
 
-**Week 4: Multi-Tenancy Implementation**
-- Implement `TenantResolutionService` (reads JWT from HTTP API Headers).
-- Apply EF Core Global Query Filters so all database queries automatically isolate tenant data.
+**Week 4: Integrations & Reporting**
+- Build Inventory deduction logic inside `InventoryService`.
+- Create webhooks for third-party food delivery APIs (UberEats, DoorDash).
 
-**Week 5: Repositories & Unit of Work**
-- Build the `IGenericRepository` and `IUnitOfWork` interfaces in the Application layer.
-- Implement the `GenericRepository` and `UnitOfWork` inside the Infrastructure layer.
+**Week 5: React Frontend - Foundation**
+- Initialize the React project (Vite or Next.js).
+- Build the Auth context, Login Component, and HTTP Axios Interceptors to handle JWTs.
+- Develop the Admin Dashboard (User & Menu Management).
 
-**Week 6: The Order Engine & Business Services**
-- Build `OrderService.cs` and `MenuService.cs` inside the Application layer.
-- Develop the core POS Order processing logic (Create Order, Link Order Items, Apply Taxes/Discounts).
+**Week 6: React Frontend - POS & KDS**
+- Build the dynamic Point of Sale UI components (Menu Grid, Active Ticket).
+- Develop the Kanban-style Kitchen Display System (KDS) for real-time ticket tracking.
 
-**Week 7: Integrations & Background Services**
-- Build Inventory deduction logic inside `InventoryService.cs`.
-- Set up Web API endpoints for third-party integrations (e.g., Delivery platforms).
+**Week 7: Testing & Quality Assurance**
+- Write automated Unit Tests for Domain logic and Business Services.
+- Conduct End-to-End API Testing to guarantee cross-tenant data safety.
 
-**Week 8: Angular Frontend - Foundation & Admin**
-- Initialize the Angular Workspace and module architecture.
-- Build the Auth Guard, Login Component, and HTTP Interceptor (to attach the JWT to all requests).
-- Develop the Admin Dashboards (User management, Role assignment).
-
-**Week 9: Angular Frontend - POS Dashboard**
-- Develop the Point of Sale UI components.
-- Utilize Angular Services and RxJS Observables to handle cart state management seamlessly.
-
-**Week 10: Angular Frontend - KDS & Reporting**
-- Develop the Kanban-style Kitchen Display System component.
-- Integrate charting libraries (e.g., ng2-charts) for visual sales analytics.
-
-**Week 11: Testing & Quality Assurance**
-- Write automated Unit Tests for Domain logic and Application Services.
-- Conduct End-to-End Testing using Jasmine/Karma.
-
-**Week 12: Deployment & UAT**
-- Deploy the ASP.NET Core Web API and SQL Server to Azure / AWS.
-- Host the compiled Angular SPA on a CDN (e.g., AWS S3 or Azure Storage).
-- Conduct User Acceptance Testing (UAT) and final bug fixes.
+**Week 8: Deployment & UAT**
+- Deploy the ASP.NET Core Web API and SQL Server to Azure.
+- Host the compiled React SPA on Vercel or Azure Static Web Apps.
+- Conduct User Acceptance Testing (UAT) and project hand-off.
