@@ -19,7 +19,7 @@ We successfully scaffolded the foundational layers of the application, strictly 
 ### B. The Infrastructure Layer (`RMS.Infrastructure`)
 **Purpose:** Acts as the bridge between the pure C# Domain and external systems (like SQL Server).
 - **What was done:** We installed Entity Framework Core and configured the `ApplicationDbContext`.
-- **Key Technical Achievement (Schema Isolation):** To prevent database conflicts with other teams sharing the same remote SQL Server (e.g., the Hospital Management team), we overrode the `OnModelCreating` method to enforce a default schema (`rms`). This ensures all our tables are generated as `rms.Orders`, `rms.Tenants`, etc., keeping our data perfectly isolated and safe.
+- **Key Technical Achievement (Database Schema Isolation):** During deployment, we discovered that another student/partner had accidentally pushed their "Hospital Management" tables into our shared database. If we proceeded normally, our code would have crashed or deleted their work. To solve this, we overrode the `OnModelCreating` method in Entity Framework to enforce a custom default schema (`rms`). This enterprise-level trick ensured all our tables were generated as `rms.Orders`, `rms.Tenants`, etc., perfectly isolating our data from the accidental pushes of other people without causing any data loss.
 
 ### C. The API Layer (`RMS.Api`)
 **Purpose:** The entry point of the application. It hosts the Kestrel web server and will eventually serve RESTful JSON endpoints to the React frontend.
