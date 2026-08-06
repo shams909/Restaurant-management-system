@@ -23,24 +23,27 @@ This document serves as the comprehensive A-to-Z blueprint for the **Restaurant 
 ### 2.2 System Actors & Use Case Diagrams
 
 ```mermaid
-usecaseDiagram
-    actor SuperAdmin as "Super Admin (SaaS Owner)"
-    actor CompanyAdmin as "Company Admin (Tenant)"
-    actor Manager as "Branch Manager"
-    actor Cashier as "Cashier/Waiter"
+flowchart LR
+    %% Actors
+    SuperAdmin["Super Admin (SaaS Owner)"]
+    CompanyAdmin["Company Admin (Tenant)"]
+    Manager["Branch Manager"]
+    Cashier["Cashier/Waiter"]
 
-    package "SaaS Management" {
-        usecase "Create Tenant" as UC1
-        usecase "Manage Subscriptions" as UC2
-    }
+    %% SaaS Management Use Cases
+    subgraph SaaS["SaaS Management"]
+        UC1(["Create Tenant"])
+        UC2(["Manage Subscriptions"])
+    end
     
-    package "Restaurant Operations" {
-        usecase "Create Branch" as UC3
-        usecase "Manage Global Menu" as UC4
-        usecase "View Branch Reports" as UC5
-        usecase "Take POS Orders" as UC6
-        usecase "Manage Inventory" as UC7
-    }
+    %% Restaurant Operations Use Cases
+    subgraph Ops["Restaurant Operations"]
+        UC3(["Create Branch"])
+        UC4(["Manage Global Menu"])
+        UC5(["View Branch Reports"])
+        UC6(["Take POS Orders"])
+        UC7(["Manage Inventory"])
+    end
 
     SuperAdmin --> UC1
     SuperAdmin --> UC2
