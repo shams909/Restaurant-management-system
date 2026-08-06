@@ -1,5 +1,5 @@
-# Comprehensive RMS Database Schema & ERD
-*Designed for a Multi-Tenant SaaS Restaurant Management System (RMS) with full POS capabilities.*
+# Comprehensive RMS Database Schema & ERD (Version 2)
+*Enterprise SaaS Architecture with Multi-Tenant & Multi-Branch Support*
 
 ---
 
@@ -7,13 +7,14 @@
 
 ```mermaid
 erDiagram
-    %% Core & Multi-Tenancy
-    TENANTS ||--o{ USERS : "employs"
-    TENANTS ||--o{ MENU_CATEGORIES : "owns"
-    TENANTS ||--o{ TABLES : "manages"
-    TENANTS ||--o{ INVENTORY_ITEMS : "tracks"
-    TENANTS ||--o{ ORDERS : "processes"
-    TENANTS ||--o{ CUSTOMERS : "serves"
+    %% Core SaaS Multi-Tenancy & Branches
+    TENANTS ||--o{ BRANCHES : "operates"
+    BRANCHES ||--o{ USERS : "employs"
+    BRANCHES ||--o{ TABLES : "manages"
+    BRANCHES ||--o{ INVENTORY_ITEMS : "tracks"
+    BRANCHES ||--o{ ORDERS : "processes"
+    TENANTS ||--o{ MENU_CATEGORIES : "owns globally"
+    TENANTS ||--o{ CUSTOMERS : "serves globally"
 
     %% Users, Roles & Shifts
     ROLES ||--o{ USERS : "has"
@@ -44,32 +45,28 @@ erDiagram
     ORDER_ITEMS ||--o{ ORDER_ITEM_ADDONS : "includes"
     ORDERS ||--o{ PAYMENTS : "paid via"
     
-    %% Table Structures
+    %% Core Structural Examples
     TENANTS {
         Guid Id PK
         string CompanyCode
         string CompanyName
     }
+    BRANCHES {
+        int Id PK
+        Guid TenantId FK
+        string BranchCode
+        string Location
+    }
     USERS {
         int Id PK
-        Guid TenantId FK
+        int BranchId FK
         string EmployeeNo
-    }
-    CUSTOMERS {
-        int Id PK
-        Guid TenantId FK
-        string CustomerNo
     }
     ORDERS {
         int Id PK
-        Guid TenantId FK
+        int BranchId FK
         string OrderNo
         decimal GrandTotal
-    }
-    MENU_ITEMS {
-        int Id PK
-        Guid TenantId FK
-        string ItemCode
     }
 ```
 
@@ -77,23 +74,28 @@ erDiagram
 
 ## 2. Table Schemas & Data Dictionary
 
-### A. Core Multi-Tenancy & CRM
-**`Tenants`** (The Companies/Restaurants - **Only table with a GUID Primary Key**)
+### A. Core SaaS Architecture (Multi-Tenant & Multi-Branch)
+**`Tenants`** (The Global Company - **Only table with a GUID Primary Key**)
 - `Id` (GUID, PK)
 - `CompanyCode` (VARCHAR 20, UNIQUE) - e.g., *COMP-001*
 - `CompanyName` (VARCHAR 100)
 - `Subdomain` (VARCHAR 50, UNIQUE) - e.g., *kfc.rms.com*
-- `Currency` (VARCHAR 10) - e.g., *USD, EUR*
-- `DefaultTaxRate` (DECIMAL 5,2) - e.g., *15.00*
 - `CreatedAt` (DATETIME)
 
-**`Customers`** (Loyalty & CRM)
+**`Branches`** (Physical Locations)
+- `Id` (INT, PK, IDENTITY)
+- `TenantId` (GUID, FK)
+- `BranchCode` (VARCHAR 20, UNIQUE) - e.g., *BRN-DHAKA-01*
+- `Name` (VARCHAR 100)
+- `Address` (VARCHAR 255)
+- `ContactPhone` (VARCHAR 20)
+
+**`Customers`** (Loyalty & CRM - Shared globally across branches)
 - `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
 - `CustomerNo` (VARCHAR 20, UNIQUE) - e.g., *CUST-10045*
 - `FullName` (VARCHAR 100)
 - `Phone` (VARCHAR 20)
-- `Email` (VARCHAR 100)
 - `LoyaltyPoints` (INT)
 
 ### B. Users, Roles & Access Control
@@ -112,9 +114,9 @@ erDiagram
 - `RoleId` (INT, PK/FK)
 - `PermissionId` (INT, PK/FK)
 
-**`Users`** (Staff Members)
+**`Users`** (Staff Members assigned to a Branch)
 - `Id` (INT, PK, IDENTITY)
-- `TenantId` (GUID, FK)
+- `BranchId` (INT, FK)
 - `RoleId` (INT, FK)
 - `EmployeeNo` (VARCHAR 20, UNIQUE) - e.g., *EMP-102*
 - `FullName` (VARCHAR 100)
@@ -124,35 +126,33 @@ erDiagram
 ### C. Shift & Cash Management (POS End-of-Day)
 **`Shifts`**
 - `Id` (INT, PK, IDENTITY)
-- `TenantId` (GUID, FK)
+- `BranchId` (INT, FK)
 - `UserId` (INT, FK)
 - `ShiftCode` (VARCHAR 20) - e.g., *SHF-20231015-01*
 - `ClockInTime` (DATETIME)
 - `ClockOutTime` (DATETIME, NULLABLE)
-- `HourlyRate` (DECIMAL 18,2)
 
 **`CashRegisters`**
 - `Id` (INT, PK, IDENTITY)
-- `TenantId` (GUID, FK)
+- `BranchId` (INT, FK)
 - `UserId` (INT, FK)
 - `RegisterCode` (VARCHAR 20) - e.g., *REG-01*
 - `OpeningBalance` (DECIMAL 18,2)
 - `ClosingBalance` (DECIMAL 18,2)
 - `OpenedAt` (DATETIME)
-- `ClosedAt` (DATETIME, NULLABLE)
 
 ### D. Advanced Menu Engine
-**`MenuCategories`**
+**`MenuCategories`** (Shared globally across Tenant)
 - `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
-- `CategoryCode` (VARCHAR 20) - e.g., *CAT-BEV*
+- `CategoryCode` (VARCHAR 20)
 - `Name` (VARCHAR 50)
 
 **`MenuItems`**
 - `Id` (INT, PK, IDENTITY)
 - `TenantId` (GUID, FK)
 - `CategoryId` (INT, FK)
-- `ItemCode` (VARCHAR 20, UNIQUE) - e.g., *MNU-BRG-01*
+- `ItemCode` (VARCHAR 20, UNIQUE)
 - `Name` (VARCHAR 100)
 - `BasePrice` (DECIMAL 18,2)
 - `IsAvailable` (BIT)
@@ -160,47 +160,42 @@ erDiagram
 **`ItemVariants`**
 - `Id` (INT, PK, IDENTITY)
 - `MenuItemId` (INT, FK)
-- `VariantCode` (VARCHAR 20) - e.g., *VAR-LRG*
+- `VariantCode` (VARCHAR 20)
 - `Name` (VARCHAR 50)
 - `PriceAdjustment` (DECIMAL 18,2)
 
 **`ItemAddons`**
 - `Id` (INT, PK, IDENTITY)
 - `MenuItemId` (INT, FK)
-- `AddonCode` (VARCHAR 20) - e.g., *ADD-CHS*
+- `AddonCode` (VARCHAR 20)
 - `Name` (VARCHAR 50)
 - `Price` (DECIMAL 18,2)
 
 ### E. Tables & Reservations
-**`Tables`** (Floor Plan)
+**`Tables`** (Floor Plan per Branch)
 - `Id` (INT, PK, IDENTITY)
-- `TenantId` (GUID, FK)
-- `TableCode` (VARCHAR 20) - e.g., *TBL-A1*
-- `TableNumber` (VARCHAR 10)
+- `BranchId` (INT, FK)
+- `TableCode` (VARCHAR 20)
 - `Capacity` (INT)
-- `Status` (VARCHAR 20) - *Available, Occupied, Reserved*
+- `Status` (VARCHAR 20)
 
 **`Reservations`**
 - `Id` (INT, PK, IDENTITY)
-- `TenantId` (GUID, FK)
+- `BranchId` (INT, FK)
 - `CustomerId` (INT, FK)
 - `TableId` (INT, FK)
-- `ReservationNo` (VARCHAR 20) - e.g., *RES-00921*
+- `ReservationNo` (VARCHAR 20)
 - `ReservationTime` (DATETIME)
-- `PartySize` (INT)
 
 ### F. Orders & Checkout
-**`Orders`** (The main ticket)
+**`Orders`** (The main ticket per Branch)
 - `Id` (INT, PK, IDENTITY)
-- `TenantId` (GUID, FK)
+- `BranchId` (INT, FK)
 - `TableId` (INT, FK, NULLABLE)
 - `UserId` (INT, FK)
 - `CustomerId` (INT, FK, NULLABLE)
-- `OrderNo` (VARCHAR 50, UNIQUE) - e.g., *ORD-2023-11204*
+- `OrderNo` (VARCHAR 50, UNIQUE)
 - `OrderType` (VARCHAR 20) - *DineIn, Takeaway, Delivery*
-- `SubTotal` (DECIMAL 18,2)
-- `TaxAmount` (DECIMAL 18,2)
-- `DiscountAmount` (DECIMAL 18,2)
 - `GrandTotal` (DECIMAL 18,2)
 - `Status` (VARCHAR 20)
 
@@ -212,7 +207,6 @@ erDiagram
 - `Quantity` (INT)
 - `UnitPrice` (DECIMAL 18,2)
 - `KdsStatus` (VARCHAR 20) - *Pending, Cooking, Ready, Served*
-- `Notes` (VARCHAR 255)
 
 **`OrderItemAddons`**
 - `Id` (INT, PK, IDENTITY)
@@ -223,19 +217,18 @@ erDiagram
 - `Id` (INT, PK, IDENTITY)
 - `OrderId` (INT, FK)
 - `CashRegisterId` (INT, FK)
-- `PaymentNo` (VARCHAR 50) - e.g., *PAY-99382*
+- `PaymentNo` (VARCHAR 50)
 - `Amount` (DECIMAL 18,2)
-- `PaymentMethod` (VARCHAR 20) - *Cash, CreditCard, Mobile*
-- `TransactionId` (VARCHAR 100, NULLABLE)
+- `PaymentMethod` (VARCHAR 20) - *Cash, CreditCard*
 
 ### G. Inventory & Recipes
-**`InventoryItems`**
+**`InventoryItems`** (Tracked per Branch)
 - `Id` (INT, PK, IDENTITY)
-- `TenantId` (GUID, FK)
-- `ItemCode` (VARCHAR 20, UNIQUE) - e.g., *INV-BEEF-01*
+- `BranchId` (INT, FK)
+- `ItemCode` (VARCHAR 20, UNIQUE)
 - `Name` (VARCHAR 100)
 - `CurrentStock` (DECIMAL 18,3)
-- `UnitOfMeasure` (VARCHAR 20) - e.g., "Kg", "Pcs"
+- `UnitOfMeasure` (VARCHAR 20)
 - `ReorderLevel` (DECIMAL 18,3)
 
 **`Recipes`**
@@ -246,8 +239,8 @@ erDiagram
 
 **`PurchaseOrders`**
 - `Id` (INT, PK, IDENTITY)
-- `TenantId` (GUID, FK)
-- `PoNumber` (VARCHAR 50, UNIQUE) - e.g., *PO-2023-089*
+- `BranchId` (INT, FK)
+- `PoNumber` (VARCHAR 50, UNIQUE)
 - `SupplierName` (VARCHAR 100)
 - `TotalCost` (DECIMAL 18,2)
-- `Status` (VARCHAR 20) - *Pending, Received*
+- `Status` (VARCHAR 20)
