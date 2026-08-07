@@ -47,7 +47,8 @@ builder.Services.AddScoped<IMenuItemService, MenuItemService>();
 // This injects the ItemVariantService (The Chef) into the Controller
 builder.Services.AddScoped<ITableService, TableService>();
 
-
+// This injects the InventoryItemService (The Chef) into the Controller
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 // This scans your entire project, finds the MappingProfile, and turns on AutoMapper!
 builder.Services.AddAutoMapper(cfg =>
