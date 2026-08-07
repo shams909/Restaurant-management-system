@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using RMS.Application.DTOs;
 using RMS.Domain.Entities;
 
@@ -15,6 +15,14 @@ namespace RMS.Application.Mappings
             // Inventory Item Rules
             CreateMap<InventoryItem, InventoryItemDto>();
             CreateMap<CreateInventoryItemDto, InventoryItem>();
+
+            // Customer Rules
+            CreateMap<Customer, CustomerDto>();
+            CreateMap<CreateCustomerDto, Customer>();
+
+            // Recipe Rules
+            CreateMap<Recipe, RecipeDto>();
+            CreateMap<CreateRecipeDto, Recipe>();
 
 
             // Payment Rules
