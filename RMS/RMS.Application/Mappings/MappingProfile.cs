@@ -11,6 +11,10 @@ namespace RMS.Application.Mappings
 
 
         {
+            // Order Item Rules
+            CreateMap<OrderItem, OrderItemDto>();
+            CreateMap<CreateOrderItemDto, OrderItem>();
+
             // Order Rules
             CreateMap<Order, OrderDto>();
             CreateMap<CreateOrderDto, Order>();

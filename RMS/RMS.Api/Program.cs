@@ -50,6 +50,10 @@ builder.Services.AddScoped<ITableService, TableService>();
 // This injects the InventoryItemService (The Chef) into the Controller
 builder.Services.AddScoped<IOrderService, OrderService>();
 
+// This injects the OrderItemService (The Chef) into the Controller
+builder.Services.AddScoped<IOrderItemService, OrderItemService>();
+
+
 // This scans your entire project, finds the MappingProfile, and turns on AutoMapper!
 builder.Services.AddAutoMapper(cfg =>
 {
