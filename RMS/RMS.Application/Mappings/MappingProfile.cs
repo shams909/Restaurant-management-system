@@ -12,6 +12,11 @@ namespace RMS.Application.Mappings
 
         {
 
+            // Inventory Item Rules
+            CreateMap<InventoryItem, InventoryItemDto>();
+            CreateMap<CreateInventoryItemDto, InventoryItem>();
+
+
             // Payment Rules
             CreateMap<Payment, PaymentDto>();
             CreateMap<CreatePaymentDto, Payment>();
