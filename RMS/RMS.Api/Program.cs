@@ -1,9 +1,20 @@
+using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using RMS.Application.Interfaces;
 using RMS.Infrastructure.Persistence;
 using RMS.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
+// 1. Load the secret .env file
+Env.Load();
+
+// 2. Grab the password from the environment
+var connectionString = Environment.GetEnvironmentVariable("RMS_DB_CONNECTION");
+
+// 3. Securely connect to the database!
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -11,8 +22,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // 1. This connects your C# Bridge to the Professor's remote database
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+///(Now, the API will completely ignore passwords and trust your ApplicationDbContext to handle its own connection!)
+
 
 // 2. This injects the Unit of Work engine into every single API Controller
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

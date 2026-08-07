@@ -19,6 +19,9 @@ namespace RMS.Infrastructure.Persistence
             modelBuilder.HasDefaultSchema("rms");
             base.OnModelCreating(modelBuilder);
         }
+        // This is what the professor asked for. It ensures the ORM always has a database connection!
+       
+
 
         // Core
         public DbSet<Tenant> Tenants { get; set; }

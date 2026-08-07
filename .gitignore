@@ -30,3 +30,5 @@ packages/
 # Mac / VS Code
 .DS_Store
 .vscode/
+
+*.env

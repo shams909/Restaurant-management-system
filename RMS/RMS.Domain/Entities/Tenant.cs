@@ -10,5 +10,8 @@ namespace RMS.Domain.Entities
         public string CompanyName { get; set; }
         public string Subdomain { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string CompanyEmail { get; set; }
+        public string CompanyPhone { get; set; }
+
     }
 }
