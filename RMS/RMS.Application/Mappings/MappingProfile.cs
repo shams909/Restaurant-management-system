@@ -11,6 +11,11 @@ namespace RMS.Application.Mappings
 
 
         {
+            // Table Rules
+            CreateMap<Table, TableDto>();
+            CreateMap<CreateTableDto, Table>();
+
+
             // Menu Item Rules
             CreateMap<MenuItem, MenuItemDto>();
             CreateMap<CreateMenuItemDto, MenuItem>();

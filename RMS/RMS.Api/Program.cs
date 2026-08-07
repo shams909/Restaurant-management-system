@@ -44,6 +44,8 @@ builder.Services.AddScoped<IMenuCategoryService, MenuCategoryService>();
 // This injects the MenuItemService (The Chef) into the Controller
 builder.Services.AddScoped<IMenuItemService, MenuItemService>();
 
+// This injects the ItemVariantService (The Chef) into the Controller
+builder.Services.AddScoped<ITableService, TableService>();
 
 
 
