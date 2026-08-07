@@ -32,6 +32,12 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // 3. This injects the TenantService (The Chef) into the Controller
 builder.Services.AddScoped<ITenantService, TenantService>();
 
+// 4. This injects the BranchService (The Chef) into the Controller
+builder.Services.AddScoped<IBranchService, BranchService>();
+
+// This injects the UserService (The Chef) into the Controller
+builder.Services.AddScoped<IUserService, UserService>();
+
 
 // This scans your entire project, finds the MappingProfile, and turns on AutoMapper!
 builder.Services.AddAutoMapper(cfg =>

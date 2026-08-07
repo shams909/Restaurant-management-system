@@ -8,7 +8,22 @@ namespace RMS.Application.Mappings
     public class MappingProfile : Profile
     {
         public MappingProfile()
+
+
         {
+            
+            // User Rules
+            CreateMap<User, UserDto>();
+            CreateMap<CreateUserDto, User>();
+
+
+
+            // Branch Rules
+            CreateMap<Branch, BranchDto>();
+            CreateMap<CreateBranchDto, Branch>();
+
+
+
             // Rule 1: We are allowed to convert a raw Tenant into a safe TenantDto (for GET requests)
             CreateMap<Tenant, TenantDto>();
 
