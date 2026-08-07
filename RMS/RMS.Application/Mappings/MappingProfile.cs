@@ -11,7 +11,17 @@ namespace RMS.Application.Mappings
 
 
         {
-            
+            // Menu Item Rules
+            CreateMap<MenuItem, MenuItemDto>();
+            CreateMap<CreateMenuItemDto, MenuItem>();
+
+
+            // Menu Category Rules
+            CreateMap<MenuCategory, MenuCategoryDto>();
+            CreateMap<CreateMenuCategoryDto, MenuCategory>();
+
+
+
             // User Rules
             CreateMap<User, UserDto>();
             CreateMap<CreateUserDto, User>();

@@ -38,6 +38,14 @@ builder.Services.AddScoped<IBranchService, BranchService>();
 // This injects the UserService (The Chef) into the Controller
 builder.Services.AddScoped<IUserService, UserService>();
 
+// This injects the CustomerService (The Chef) into the Controller
+builder.Services.AddScoped<IMenuCategoryService, MenuCategoryService>();
+
+// This injects the MenuItemService (The Chef) into the Controller
+builder.Services.AddScoped<IMenuItemService, MenuItemService>();
+
+
+
 
 // This scans your entire project, finds the MappingProfile, and turns on AutoMapper!
 builder.Services.AddAutoMapper(cfg =>
