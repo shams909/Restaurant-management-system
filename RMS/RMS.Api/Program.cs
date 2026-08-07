@@ -28,7 +28,17 @@ builder.Services.AddSwaggerGen();
 // 2. This injects the Unit of Work engine into every single API Controller
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+// This scans your entire project, finds the MappingProfile, and turns on AutoMapper!
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<RMS.Application.Mappings.MappingProfile>();
+});
+
+
+
 var app = builder.Build();
+
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
