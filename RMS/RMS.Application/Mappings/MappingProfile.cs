@@ -11,6 +11,12 @@ namespace RMS.Application.Mappings
 
 
         {
+
+            // Payment Rules
+            CreateMap<Payment, PaymentDto>();
+            CreateMap<CreatePaymentDto, Payment>();
+
+
             // Order Item Rules
             CreateMap<OrderItem, OrderItemDto>();
             CreateMap<CreateOrderItemDto, OrderItem>();
