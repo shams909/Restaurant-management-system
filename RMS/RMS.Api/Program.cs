@@ -1,3 +1,4 @@
+using RMS.Application.Services;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using RMS.Application.Interfaces;
@@ -27,6 +28,10 @@ builder.Services.AddSwaggerGen();
 
 // 2. This injects the Unit of Work engine into every single API Controller
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// 3. This injects the TenantService (The Chef) into the Controller
+builder.Services.AddScoped<ITenantService, TenantService>();
+
 
 // This scans your entire project, finds the MappingProfile, and turns on AutoMapper!
 builder.Services.AddAutoMapper(cfg =>
