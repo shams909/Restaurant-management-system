@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using RMS.Application.Interfaces;
 using RMS.Application.DTOs;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 
 namespace RMS.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class TenantsController : ControllerBase
@@ -35,3 +37,4 @@ namespace RMS.Api.Controllers
         }
     }
 }
+

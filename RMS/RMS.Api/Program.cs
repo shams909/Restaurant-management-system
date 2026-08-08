@@ -1,3 +1,7 @@
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using RMS.Application.Services;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
@@ -12,15 +16,72 @@ Env.Load();
 // 2. Grab the password from the environment
 var connectionString = Environment.GetEnvironmentVariable("RMS_DB_CONNECTION");
 
+
+
+
 // 3. Securely connect to the database!
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 
+var secretKey = Environment.GetEnvironmentVariable("JWT_KEY");
+var keyBytes = Encoding.UTF8.GetBytes(secretKey);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
+
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(c =>
+{
+    // 1. Adds the "Authorize" button to the top of Swagger
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "Standard Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    // 2. Tells Swagger to automatically attach the Token to every locked endpoint
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            },
+            new System.Collections.Generic.List<string>()
+        }
+    });
+});
+
 
 // 1. This connects your C# Bridge to the Professor's remote database
 ///(Now, the API will completely ignore passwords and trust your ApplicationDbContext to handle its own connection!)
@@ -59,8 +120,14 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 // This injects the InventoryItemService (The Chef) into the Controller
 builder.Services.AddScoped<IInventoryItemService, InventoryItemService>();
 
+
 builder.Services.AddScoped<ICustomerService, CustomerService>();
+// This injects the RecipeService (The Chef) into the Controller
 builder.Services.AddScoped<IRecipeService, RecipeService>();
+
+// This injects the AuthService (The Chef) into the Controller
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 
 
 // This scans your entire project, finds the MappingProfile, and turns on AutoMapper!
@@ -83,6 +150,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication(); // <-- ADD THIS ONE FIRST
 app.UseAuthorization();
 app.MapControllers();
 

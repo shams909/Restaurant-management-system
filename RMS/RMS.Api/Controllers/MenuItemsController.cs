@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using RMS.Application.Interfaces;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using RMS.Application.DTOs;
+using RMS.Application.Interfaces;
 using System.Threading.Tasks;
 
 namespace RMS.Api.Controllers
 {
+    [Authorize] // <--- THIS IS THE BOUNCER!
     [Route("api/[controller]")]
     [ApiController]
     public class MenuItemsController : ControllerBase

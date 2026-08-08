@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using BCrypt.Net;
+using AutoMapper;
 using RMS.Application.DTOs;
 using RMS.Application.Interfaces;
 using RMS.Domain.Entities;
@@ -26,15 +27,17 @@ namespace RMS.Application.Services
 
         public async Task<UserDto> CreateUserAsync(CreateUserDto createDto)
         {
-            // The Chef receives the password and maps it to the real User entity
             var user = _mapper.Map<User>(createDto);
 
-            // Hand it to the Pantry to save to the database!
+            // [SECURITY]: Intercept the raw password and scramble it before saving!
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(createDto.PasswordHash);
+
+            // Save to the database
             await _unitOfWork.Repository<User>().AddAsync(user);
             await _unitOfWork.SaveAsync();
 
-            // When returning the data, AutoMapper automatically rips the password out!
             return _mapper.Map<UserDto>(user);
         }
+
     }
 }

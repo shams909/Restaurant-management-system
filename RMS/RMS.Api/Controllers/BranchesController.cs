@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using RMS.Application.Interfaces;
 using RMS.Application.DTOs;
 using System.Threading.Tasks;
 
 namespace RMS.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class BranchesController : ControllerBase
@@ -31,3 +33,4 @@ namespace RMS.Api.Controllers
         }
     }
 }
+
