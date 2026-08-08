@@ -34,3 +34,7 @@ The `OrderService.CreateOrderAsync` method was completely rewritten to intercept
 
 ## 3. Results & Architecture Maturity
 The API is no longer just a database wrapper; it is the "Brain" of the restaurant. By centralizing the business logic inside the Application layer (Clean Architecture), any platform (Web, iOS, Android, POS Terminal) can hit the API, and the backend will guarantee that the math is correct, the stock is deducted, and the kitchen is notified.
+
+
+## what i actually did --> is ---> 
+### "I transformed the backend from a basic CRUD API into a secure SaaS Engine. I implemented Global Query Filters at the EF Core level to guarantee Data Isolation across tenants via JWT claims. Then, I decoupled the pricing logic from the frontend and built an Order Engine that securely calculates totals server-side, traces item recipes, automatically deducts inventory, and writes immutable transaction logs."
