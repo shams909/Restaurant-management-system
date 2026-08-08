@@ -10,3 +10,7 @@ namespace RMS.Application.Interfaces
         Task<PaymentDto> CreatePaymentAsync(CreatePaymentDto createDto);
     }
 }
+
+
+
+

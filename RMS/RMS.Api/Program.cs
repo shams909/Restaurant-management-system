@@ -136,6 +136,10 @@ builder.Services.AddScoped<IRecipeService, RecipeService>();
 // This injects the AuthService (The Chef) into the Controller
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// This injects the KitchenService (The Chef) into the Controller
+builder.Services.AddScoped<IKitchenService, KitchenService>();
+
+
 
 
 // This scans your entire project, finds the MappingProfile, and turns on AutoMapper!
