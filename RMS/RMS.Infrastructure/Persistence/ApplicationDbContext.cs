@@ -1,26 +1,50 @@
-﻿using Microsoft.EntityFrameworkCore;
+using RMS.Application.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using RMS.Domain.Entities;
 
 namespace RMS.Infrastructure.Persistence
 {
-    // Inheriting from DbContext is what gives this class its magic database powers
+
+
+
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        private readonly ICurrentUserService _currentUserService;
+
+        // [MODIFIED]: We inject the CurrentUserService here!
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService)
+            : base(options)
         {
+            _currentUserService = currentUserService;
         }
 
-        // ==========================================
-        // PASTE IT RIGHT HERE!
-        // This puts all your tables in the "rms" schema
-        // ==========================================
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        // We create dynamic properties so EF Core can re-evaluate them on EVERY request!
+        public Guid CurrentTenantId => string.IsNullOrEmpty(_currentUserService.TenantId) ? Guid.Empty : Guid.Parse(_currentUserService.TenantId);
+        public int CurrentBranchId => _currentUserService.BranchId;
+
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            modelBuilder.HasDefaultSchema("rms");
-            base.OnModelCreating(modelBuilder);
+            // Restore the Professor's required default schema!
+            builder.HasDefaultSchema("rms");
+            
+            base.OnModelCreating(builder);
+
+            // [NEW]: Global Query Filters (The Invisible Walls)
+            // By referencing CurrentTenantId, EF Core will run this check dynamically every single time!
+            
+            // Tell Entity Framework to NEVER return data that doesn't belong to this Tenant!
+            builder.Entity<MenuItem>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
+            builder.Entity<MenuCategory>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
+            builder.Entity<Customer>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
+
+            // Isolate Branch-specific data!
+            builder.Entity<Order>().HasQueryFilter(e => e.BranchId == CurrentBranchId || CurrentBranchId == 0);
+            builder.Entity<InventoryItem>().HasQueryFilter(e => e.BranchId == CurrentBranchId || CurrentBranchId == 0);
+            builder.Entity<Table>().HasQueryFilter(e => e.BranchId == CurrentBranchId || CurrentBranchId == 0);
         }
+
         // This is what the professor asked for. It ensures the ORM always has a database connection!
-       
+
 
 
         // Core

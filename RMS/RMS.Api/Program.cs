@@ -1,3 +1,4 @@
+using RMS.Api.Services;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -81,6 +82,13 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+
+// This enables the IHttpContextAccessor to read HTTP requests!
+builder.Services.AddHttpContextAccessor();
+
+// This injects the CurrentUserService into the pipeline!
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 
 // 1. This connects your C# Bridge to the Professor's remote database

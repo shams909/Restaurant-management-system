@@ -1,4 +1,4 @@
-﻿using BCrypt.Net;
+using BCrypt.Net;
 using Microsoft.IdentityModel.Tokens;
 using RMS.Application.DTOs;
 using RMS.Application.Interfaces;
@@ -33,6 +33,12 @@ namespace RMS.Application.Services
                 throw new Exception("Invalid Employee Number or Password");
             }
 
+            // [NEW]: Find out which Branch the user works at, and who the Master Tenant is!
+            var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(user.BranchId);
+            if (branch == null) throw new Exception("Critical Error: User has no assigned Branch.");
+
+            var tenantId = branch.TenantId.ToString();
+
             // 3. Grab the master key from the .env file
             var secretKey = Environment.GetEnvironmentVariable("JWT_KEY");
             var keyBytes = Encoding.UTF8.GetBytes(secretKey);
@@ -44,7 +50,13 @@ namespace RMS.Application.Services
                 {
                     new Claim("userId", user.Id.ToString()),
                     new Claim("employeeNo", user.EmployeeNo),
-                    // Later, we can add the RoleId here for RBAC!
+                    
+                    // [NEW CLAIMS]: The API will now read these from the token on every request!
+                    new Claim("tenantId", tenantId),
+                    new Claim("branchId", user.BranchId.ToString()),
+                    
+                    // We will use the built-in ClaimTypes.Role so [Authorize(Roles="Manager")] works natively!
+                    new Claim(ClaimTypes.Role, user.RoleId.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddHours(8), // Token expires in 8 hours (a standard shift)
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256Signature)
