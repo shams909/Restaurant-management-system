@@ -1,4 +1,4 @@
-﻿namespace RMS.Domain.Entities
+namespace RMS.Domain.Entities
 {
     public class Order
     {
@@ -13,5 +13,9 @@
         public string OrderType { get; set; } // DineIn, Takeaway, Delivery
         public decimal GrandTotal { get; set; }
         public string Status { get; set; } // Open, Paid, Cancelled
+
+        // Navigation property for Entity Framework to magically save the items with the order
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }
+

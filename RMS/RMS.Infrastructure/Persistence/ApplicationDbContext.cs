@@ -69,5 +69,9 @@ namespace RMS.Infrastructure.Persistence
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<OrderItemAddon> OrderItemAddons { get; set; }
         public DbSet<Payment> Payments { get; set; }
+
+        // Inventory Transactions
+        public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
+
     }
 }
