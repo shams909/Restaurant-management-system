@@ -12,11 +12,15 @@ namespace RMS.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        // [NEW] 1. Add the CurrentUserService variable!
+        private readonly ICurrentUserService _currentUserService;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper)
+        // [NEW] 2. Inject the CurrentUserService into the constructor!
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUserService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _currentUserService = currentUserService;   
         }
 
         public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync()
@@ -52,6 +56,12 @@ namespace RMS.Application.Services
                         // 4. Calculate how much we used (e.g. 1 patty * 2 burgers ordered = 2 patties used)
                         decimal amountUsed = recipe.QuantityUsed * itemRequest.Quantity;
 
+                        // [NEW] The ChatGPT Guard!
+                        if (inventoryItem.CurrentStock < amountUsed)
+                        {
+                            throw new System.Exception($"CRITICAL: Not enough stock! We only have {inventoryItem.CurrentStock} of '{inventoryItem.Id}' left.");
+                        }
+
                         // 5. Deduct it from the stock room!
                         inventoryItem.CurrentStock -= amountUsed;
 
@@ -60,12 +70,15 @@ namespace RMS.Application.Services
                         // 7. Create a Transaction Receipt!
                         var transaction = new InventoryTransaction
                         {
-                            InventoryItemId = inventoryItem.Id,
+                            // [NEW] 3. Stamp the restaurant's ID onto the receipt!
+                            TenantId = System.Guid.Parse(_currentUserService.TenantId),
                             BranchId = order.BranchId,
+                            InventoryItemId = inventoryItem.Id,
                             TransactionType = "Sale",
-                            QuantityChanged = -amountUsed, // Negative because we used it!
+                            QuantityChanged = -amountUsed,
                             Notes = $"Automatically deducted from Kitchen"
                         };
+
 
                         await _unitOfWork.Repository<InventoryTransaction>().AddAsync(transaction);
 

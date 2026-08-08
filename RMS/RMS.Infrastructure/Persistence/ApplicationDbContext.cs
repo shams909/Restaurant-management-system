@@ -38,9 +38,10 @@ namespace RMS.Infrastructure.Persistence
             builder.Entity<Customer>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
 
             // Isolate Branch-specific data!
-            builder.Entity<Order>().HasQueryFilter(e => e.BranchId == CurrentBranchId || CurrentBranchId == 0);
-            builder.Entity<InventoryItem>().HasQueryFilter(e => e.BranchId == CurrentBranchId || CurrentBranchId == 0);
-            builder.Entity<Table>().HasQueryFilter(e => e.BranchId == CurrentBranchId || CurrentBranchId == 0);
+            builder.Entity<Order>().HasQueryFilter(e => e.BranchId == CurrentBranchId);
+            builder.Entity<InventoryItem>().HasQueryFilter(e => e.BranchId == CurrentBranchId);
+            builder.Entity<Table>().HasQueryFilter(e => e.BranchId == CurrentBranchId);
+
         }
 
         // This is what the professor asked for. It ensures the ORM always has a database connection!
