@@ -19,9 +19,11 @@ namespace RMS.Infrastructure.Repositories
 
         public async Task<T> GetByIdAsync(object id)
         {
-            // FindAsync is smart enough to use a GUID or an INT automatically!
-            return await _dbSet.FindAsync(id);
+            // [FIX] We use FirstOrDefaultAsync instead of FindAsync because FindAsync 
+            // completely ignores our Global Query Filters (The Invisible Wall)!
+            return await _dbSet.FirstOrDefaultAsync(e => EF.Property<object>(e, "Id").Equals(id));
         }
+
 
         public async Task<IReadOnlyList<T>> GetAllAsync()
         {

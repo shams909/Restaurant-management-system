@@ -96,6 +96,7 @@ namespace RMS.Application.Services
                     MenuItemId = menuItem.Id,
                     Quantity = itemRequest.Quantity,
                     UnitPrice = menuItem.BasePrice,
+                    BranchId = order.BranchId, // [NEW] 4. Stamp the branch's ID onto the order item!   
                     KdsStatus = "Pending" // Automatically send to Kitchen Display System!
                 };
 

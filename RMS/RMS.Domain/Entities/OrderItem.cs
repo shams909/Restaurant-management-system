@@ -8,6 +8,8 @@
         public int MenuItemId { get; set; } // The exact food item ordered
         public int? VariantId { get; set; } // Nullable: E.g., The "Large" size
 
+        public int BranchId { get; set; }
+
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
 
