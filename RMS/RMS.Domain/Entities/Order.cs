@@ -13,6 +13,8 @@ namespace RMS.Domain.Entities
         public string OrderType { get; set; } // DineIn, Takeaway, Delivery
         public decimal GrandTotal { get; set; }
         public string Status { get; set; } // Open, Paid, Cancelled
+         // [NEW] The time the order was placed!
+        public System.DateTime OrderDate { get; set; } = System.DateTime.UtcNow;
 
         // Navigation property for Entity Framework to magically save the items with the order
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
