@@ -55,8 +55,10 @@ namespace RMS.Application.Services
                     new Claim("tenantId", tenantId),
                     new Claim("branchId", user.BranchId.ToString()),
                     
-                    // We will use the built-in ClaimTypes.Role so [Authorize(Roles="Manager")] works natively!
-                    new Claim(ClaimTypes.Role, user.RoleId.ToString())
+                    // Convert the integer RoleId into the exact string the Controllers are looking for!
+                    new Claim(ClaimTypes.Role, user.RoleId == 1 ? "SuperAdmin" : 
+                                               user.RoleId == 2 ? "Manager" : 
+                                               user.RoleId == 3 ? "Chef" : "Waiter")
                 }),
                 Expires = DateTime.UtcNow.AddHours(8), // Token expires in 8 hours (a standard shift)
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256Signature)
