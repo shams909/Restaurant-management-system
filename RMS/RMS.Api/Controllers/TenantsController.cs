@@ -8,6 +8,7 @@ using System.Collections.Generic;
 namespace RMS.Api.Controllers
 {
     [Authorize]
+    [Authorize(Roles = "SuperAdmin")]
     [Route("api/[controller]")]
     [ApiController]
     public class TenantsController : ControllerBase

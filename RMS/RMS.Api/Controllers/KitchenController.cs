@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 namespace RMS.Api.Controllers
 {
     [Authorize] // Only logged in kitchen staff can use this!
+    [Authorize(Roles = "Chef,Manager")]
     [Route("api/[controller]")]
     [ApiController]
     public class KitchenController : ControllerBase

@@ -34,6 +34,11 @@ namespace RMS.Application.Services
             var order = _mapper.Map<Order>(createDto);
             decimal calculatedTotal = 0;
 
+            // [NEW] 1. Auto-Generate the Order Number securely on the server!
+            // Format: ORD-20260809123045-A1B2
+            order.OrderNo = "ORD-" + System.DateTime.UtcNow.ToString("yyyyMMddHHmmss") + "-" + System.Guid.NewGuid().ToString().Substring(0, 4).ToUpper();
+
+
             // 1. We manually loop through what the frontend requested
             foreach (var itemRequest in createDto.Items)
             {

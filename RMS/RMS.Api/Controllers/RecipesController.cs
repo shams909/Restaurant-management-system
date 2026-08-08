@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 namespace RMS.Api.Controllers
 {
     [Authorize]
+    [Authorize(Roles = "Manager")]
     [Route("api/[controller]")]
     [ApiController]
     public class RecipesController : ControllerBase
