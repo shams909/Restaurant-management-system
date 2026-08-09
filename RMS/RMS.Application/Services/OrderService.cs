@@ -32,6 +32,10 @@ namespace RMS.Application.Services
         public async Task<OrderDto> CreateOrderAsync(CreateOrderDto createDto)
         {
             var order = _mapper.Map<Order>(createDto);
+            // [FIX] The Waiter Spoofing Vulnerability
+            // AutoMapper blindly copied the BranchId from the frontend. We MUST overwrite it with the true JWT BranchId!
+            order.BranchId = _currentUserService.BranchId;
+
             decimal calculatedTotal = 0;
 
             // [NEW] 1. Auto-Generate the Order Number securely on the server!

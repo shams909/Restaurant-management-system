@@ -1,3 +1,4 @@
+using RMS.Api.Middleware;
 using RMS.Api.Services;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -44,6 +45,17 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = false,
         ValidateAudience = false
     };
+});
+
+// [NEW] Configure CORS so the React frontend can talk to the API!
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
 });
 
 
@@ -162,9 +174,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// [NEW] 1. Catch all crashes and turn them into JSON!
+app.UseMiddleware<ExceptionMiddleware>();
+
 app.UseHttpsRedirection();
-app.UseAuthentication(); // <-- ADD THIS ONE FIRST
+
+// [NEW] 2. Open the gates for the React Frontend!
+app.UseCors("AllowFrontend");
+
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
