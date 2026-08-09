@@ -19,8 +19,10 @@ The `OrderService.CreateOrderAsync` method was patched to implement strict serve
 By default, ASP.NET Core returns unhandled exceptions (such as "Insufficient Stock" errors) as raw HTML 500 Server Error pages. Modern frontend frameworks (React/Blazor) require structured JSON responses to properly display error messages to the end-user.
 
 **The Fix:**
-A custom `ExceptionMiddleware` interceptor was injected into the top of the HTTP request pipeline in `Program.cs`. 
-This middleware catches any exception thrown anywhere in the application (Services, Repositories, Controllers), intercepts the crash, and forces the API to return a structured `400 Bad Request` JSON response (e.g., `{"error": "Insufficient Stock!", "isSuccess": false}`). This ensures the backend never crashes unexpectedly and the frontend always receives readable error states.
+A custom `ExceptionMiddleware` interceptor was injected into the top of the HTTP request pipeline. This serves as a global safety net with two advanced capabilities:
+
+1. **Production Telemetry (`ILogger`):** Every caught exception is instantly written to the server's internal logs, ensuring that developers have a permanent paper trail of stack traces for 3:00 AM debugging.
+2. **Dynamic HTTP Routing:** The middleware inspects the exact `Type` of the exception. If a user breaks a business rule (e.g., "Insufficient Stock"), it cleanly returns a `400 Bad Request` JSON object (`{"error": "Insufficient Stock!"}`). However, if a true system crash occurs (like a `SqlException` or `NullReferenceException`), it correctly returns a `500 Internal Server Error`, ensuring network monitoring tools accurately detect infrastructure failures.
 
 ---
 
