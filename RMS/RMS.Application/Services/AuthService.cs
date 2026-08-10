@@ -33,11 +33,11 @@ namespace RMS.Application.Services
                 throw new Exception("Invalid Employee Number or Password");
             }
 
-            // [NEW]: Find out which Branch the user works at, and who the Master Tenant is!
-            var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(user.BranchId);
-            if (branch == null) throw new Exception("Critical Error: User has no assigned Branch.");
-
-            var tenantId = branch.TenantId.ToString();
+            // [NEW]: Since TenantId is directly on the user, we no longer need to do a slow database lookup for the Branch!
+            var tenantId = user.TenantId.ToString();
+            
+            // If the user is a SuperAdmin (CEO), they might not have a BranchId. We use "0" as a fallback so the JWT doesn't crash.
+            var branchIdString = user.BranchId.HasValue ? user.BranchId.Value.ToString() : "0";
 
             // 3. Grab the master key from the .env file
             var secretKey = Environment.GetEnvironmentVariable("JWT_KEY");
@@ -53,7 +53,7 @@ namespace RMS.Application.Services
                     
                     // [NEW CLAIMS]: The API will now read these from the token on every request!
                     new Claim("tenantId", tenantId),
-                    new Claim("branchId", user.BranchId.ToString()),
+                    new Claim("branchId", branchIdString),
                     
                     // Convert the integer RoleId into the exact string the Controllers are looking for!
                     new Claim(ClaimTypes.Role, user.RoleId == 1 ? "SuperAdmin" : 
