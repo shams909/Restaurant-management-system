@@ -38,10 +38,10 @@ namespace RMS.Api.Middleware
         {
             context.Response.ContentType = "application/json";
             
-            // [FIX] Differentiate between a Business Rule (400) and a Server Crash (500)
-            // Because we used 'throw new Exception()' for our business rules, we can check the exact type!
-            // If it's a NullReferenceException or Database drop, it will be 500.
-            if (exception.GetType() == typeof(Exception))
+            // [FIX] Enterprise Future-Proofing
+            // Instead of guessing based on typeof(Exception), we explicitly check if we threw a BadRequestException!
+            // If we did, it's a 400 Bad Request. If it's literally anything else, it's a 500 Server Crash.
+            if (exception is RMS.Application.Exceptions.BadRequestException)
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
             }
