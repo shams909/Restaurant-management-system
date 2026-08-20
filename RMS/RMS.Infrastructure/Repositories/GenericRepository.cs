@@ -46,3 +46,6 @@ namespace RMS.Infrastructure.Repositories
         }
     }
 }
+
+// idk whats gonna happen bruv
+//kinda sad😔
